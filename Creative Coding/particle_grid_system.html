@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle Grid System</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            max-width: 95vw;
+            max-height: 95vh;
+        }
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 12px;
+        }
+        .controls input {
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <div>Particles: <span id="particleCount">1000</span> | FPS: <span id="fpsCounter">--</span></div>
+        <div>Connection Distance: <input type="range" id="connectionDistance" min="0.3" max="1.5" step="0.1" value="0.8"></div>
+        <div>Max Connections: <input type="range" id="maxConnections" min="1" max="5" value="2"></div>
+        <div>Rotation Speed: <input type="range" id="rotationSpeed" min="0.05" max="0.8" step="0.05" value="0.3"></div>
+        <div>Noise Distortion: <input type="range" id="noiseDistortion" min="0.0" max="0.01" step="0.001" value="0.001"></div>
+        <div>Particle Speed: <input type="range" id="particleSpeed" min="0" max="2" step="0.1" value="1"></div>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        // Simple 3D noise function
+        function noise3D(x, y, z) {
+            const X = Math.floor(x) & 255;
+            const Y = Math.floor(y) & 255;
+            const Z = Math.floor(z) & 255;
+            x -= Math.floor(x);
+            y -= Math.floor(y);
+            z -= Math.floor(z);
+            
+            const fade = t => t * t * t * (t * (t * 6 - 15) + 10);
+            const lerp = (t, a, b) => a + t * (b - a);
+            
+            // Simplified noise - just using sine waves for demonstration
+            return 0.5 + 0.5 * Math.sin(x * 6.28 + y * 3.14 + z * 1.57 + Date.now() * 0.001);
+        }
+
+        // WebGL setup
+        const canvas = document.getElementById('canvas');
+        const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+
+        if (!gl) {
+            alert('WebGL not supported');
+        }
+
+        // Shader sources
+        const vertexShaderSource = `
+            attribute vec3 position;
+            attribute float age;
+            attribute float life;
+            
+            uniform mat4 projection;
+            uniform mat4 view;
+            uniform float time;
+            
+            varying float vAge;
+            varying float vLife;
+            
+            void main() {
+                vAge = age;
+                vLife = life;
+                
+                vec3 pos = position;
+                
+                // Add some movement
+                pos.x += sin(time * 0.5 + position.z * 3.0) * 0.1;
+                pos.z += cos(time * 0.3 + position.x * 2.0) * 0.1;
+                
+                gl_Position = projection * view * vec4(pos, 1.0);
+                gl_PointSize = 2.0 * (1.0 - age / life);
+            }
+        `;
+
+        const fragmentShaderSource = `
+            precision mediump float;
+            
+            varying float vAge;
+            varying float vLife;
+            
+            void main() {
+                // Fade in over first 20% of life, then fade out over last 80%
+                float fadeInTime = vLife * 0.2;
+                float alpha;
+                
+                if (vAge < fadeInTime) {
+                    // Fade in from transparent to fully visible
+                    alpha = vAge / fadeInTime;
+                } else {
+                    // Fade out as normal
+                    alpha = 1.0 - ((vAge - fadeInTime) / (vLife - fadeInTime));
+                }
+                
+                // Make points circular
+                vec2 coord = gl_PointCoord - vec2(0.5);
+                float dist = length(coord);
+                if (dist > 0.5) discard;
+                
+                alpha *= (1.0 - dist * 2.0);
+                gl_FragColor = vec4(1.0, 1.0, 1.0, alpha);
+            }
+        `;
+
+        const gridVertexShaderSource = `
+            attribute vec3 position;
+            attribute float alpha;
+            uniform mat4 projection;
+            uniform mat4 view;
+            
+            varying float vAlpha;
+            
+            void main() {
+                vAlpha = alpha;
+                gl_Position = projection * view * vec4(position, 1.0);
+            }
+        `;
+
+        const gridFragmentShaderSource = `
+            precision mediump float;
+            
+            varying float vAlpha;
+            
+            void main() {
+                gl_FragColor = vec4(0.7, 0.7, 0.7, vAlpha * 0.6);
+            }
+        `;
+
+        // Shader compilation
+        function createShader(type, source) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.error('Shader error:', gl.getShaderInfoLog(shader));
+                gl.deleteShader(shader);
+                return null;
+            }
+            return shader;
+        }
+
+        function createProgram(vertexSource, fragmentSource) {
+            const vertexShader = createShader(gl.VERTEX_SHADER, vertexSource);
+            const fragmentShader = createShader(gl.FRAGMENT_SHADER, fragmentSource);
+            
+            const program = gl.createProgram();
+            gl.attachShader(program, vertexShader);
+            gl.attachShader(program, fragmentShader);
+            gl.linkProgram(program);
+            
+            if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+                console.error('Program error:', gl.getProgramInfoLog(program));
+                return null;
+            }
+            return program;
+        }
+
+        // Create programs
+        const particleProgram = createProgram(vertexShaderSource, fragmentShaderSource);
+        const gridProgram = createProgram(gridVertexShaderSource, gridFragmentShaderSource);
+
+        // Particle system with cluster spawning
+        const PARTICLE_COUNT = 1000;
+        const particles = [];
+        let currentClusterCenter = { x: 0, y: 0, z: 0 };
+        let lastClusterSwitch = 0;
+        const CLUSTER_SWITCH_INTERVAL = 6; // seconds
+
+        function generateNewClusterCenter() {
+            currentClusterCenter = {
+                x: (Math.random() - 0.5) * 3,
+                y: (Math.random() - 0.5) * 3,
+                z: (Math.random() - 0.5) * 3
+            };
+        }
+
+        function spawnParticleInCluster() {
+            // Create a small random offset from cluster center
+            const clusterRadius = 0.3;
+            const angle1 = Math.random() * Math.PI * 2;
+            const angle2 = Math.random() * Math.PI;
+            const radius = Math.random() * clusterRadius;
+            
+            const x = currentClusterCenter.x + radius * Math.sin(angle2) * Math.cos(angle1);
+            const y = currentClusterCenter.y + radius * Math.sin(angle2) * Math.sin(angle1);
+            const z = currentClusterCenter.z + radius * Math.cos(angle2);
+            
+            // Initial outward velocity from cluster center
+            const outwardForce = 0.01;
+            const dx = x - currentClusterCenter.x;
+            const dy = y - currentClusterCenter.y;
+            const dz = z - currentClusterCenter.z;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz) || 1;
+            
+            return {
+                x: x,
+                y: y,
+                z: z,
+                vx: (dx/dist) * outwardForce + (Math.random() - 0.5) * 0.005,
+                vy: (dy/dist) * outwardForce + (Math.random() - 0.5) * 0.005,
+                vz: (dz/dist) * outwardForce + (Math.random() - 0.5) * 0.005,
+                age: 0,
+                life: 4 + Math.random() * 4 // Longer life to see them travel
+            };
+        }
+
+        // Initialize particles
+        generateNewClusterCenter();
+        for (let i = 0; i < PARTICLE_COUNT; i++) {
+            particles.push(spawnParticleInCluster());
+        }
+
+        // Create particle buffers
+        const particlePositions = new Float32Array(PARTICLE_COUNT * 3);
+        const particleAges = new Float32Array(PARTICLE_COUNT);
+        const particleLives = new Float32Array(PARTICLE_COUNT);
+
+        const positionBuffer = gl.createBuffer();
+        const ageBuffer = gl.createBuffer();
+        const lifeBuffer = gl.createBuffer();
+
+        // Connection system
+        let maxConnectionDistance = 0.8;
+        let maxConnections = 2;
+        let rotationSpeed = 0.3;
+        let noiseDistortion = 0.001;
+        let particleSpeed = 1.0;
+        let connectionVertices = [];
+        let connectionBuffer;
+
+        function generateConnections() {
+            connectionVertices = [];
+            
+            // For each particle, find nearby particles and connect them
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const p1 = particles[i];
+                let connections = 0;
+                
+                // Find nearest particles within distance
+                const nearbyParticles = [];
+                
+                for (let j = i + 1; j < PARTICLE_COUNT; j++) {
+                    const p2 = particles[j];
+                    const dx = p1.x - p2.x;
+                    const dy = p1.y - p2.y;
+                    const dz = p1.z - p2.z;
+                    const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    
+                    if (distance < maxConnectionDistance) {
+                        nearbyParticles.push({ particle: p2, distance: distance, index: j });
+                    }
+                }
+                
+                // Sort by distance and take closest ones
+                nearbyParticles.sort((a, b) => a.distance - b.distance);
+                
+                // Connect to nearest particles (limited by maxConnections)
+                for (let k = 0; k < Math.min(maxConnections, nearbyParticles.length); k++) {
+                    const p2 = nearbyParticles[k].particle;
+                    
+                    // Calculate average transparency for the connection
+                    const fadeInTime1 = p1.life * 0.2;
+                    const fadeInTime2 = p2.life * 0.2;
+                    
+                    let alpha1, alpha2;
+                    
+                    // Calculate alpha for particle 1
+                    if (p1.age < fadeInTime1) {
+                        alpha1 = p1.age / fadeInTime1;
+                    } else {
+                        alpha1 = 1.0 - ((p1.age - fadeInTime1) / (p1.life - fadeInTime1));
+                    }
+                    
+                    // Calculate alpha for particle 2
+                    if (p2.age < fadeInTime2) {
+                        alpha2 = p2.age / fadeInTime2;
+                    } else {
+                        alpha2 = 1.0 - ((p2.age - fadeInTime2) / (p2.life - fadeInTime2));
+                    }
+                    
+                    const avgAlpha = (alpha1 + alpha2) / 2.0;
+                    
+                    // Add line vertices with alpha values
+                    connectionVertices.push(p1.x, p1.y, p1.z, avgAlpha);
+                    connectionVertices.push(p2.x, p2.y, p2.z, avgAlpha);
+                    connections++;
+                }
+            }
+            
+            // Update buffer
+            if (connectionBuffer) gl.deleteBuffer(connectionBuffer);
+            connectionBuffer = gl.createBuffer();
+            gl.bindBuffer(gl.ARRAY_BUFFER, connectionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(connectionVertices), gl.DYNAMIC_DRAW);
+        }
+
+        // Matrix functions
+        function perspective(fov, aspect, near, far) {
+            const f = 1.0 / Math.tan(fov / 2);
+            return new Float32Array([
+                f / aspect, 0, 0, 0,
+                0, f, 0, 0,
+                0, 0, (far + near) / (near - far), -1,
+                0, 0, (2 * far * near) / (near - far), 0
+            ]);
+        }
+
+        function lookAt(eye, center, up) {
+            const z = normalize(subtract(eye, center));
+            const x = normalize(cross(up, z));
+            const y = cross(z, x);
+            
+            return new Float32Array([
+                x[0], y[0], z[0], 0,
+                x[1], y[1], z[1], 0,
+                x[2], y[2], z[2], 0,
+                -dot(x, eye), -dot(y, eye), -dot(z, eye), 1
+            ]);
+        }
+
+        function normalize(v) {
+            const len = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+            return [v[0]/len, v[1]/len, v[2]/len];
+        }
+
+        function subtract(a, b) {
+            return [a[0]-b[0], a[1]-b[1], a[2]-b[2]];
+        }
+
+        function cross(a, b) {
+            return [
+                a[1]*b[2] - a[2]*b[1],
+                a[2]*b[0] - a[0]*b[2],
+                a[0]*b[1] - a[1]*b[0]
+            ];
+        }
+
+        function dot(a, b) {
+            return a[0]*b[0] + a[1]*b[1] + a[2]*b[2];
+        }
+
+        // Controls
+        document.getElementById('connectionDistance').addEventListener('input', (e) => {
+            maxConnectionDistance = parseFloat(e.target.value);
+        });
+
+        document.getElementById('maxConnections').addEventListener('input', (e) => {
+            maxConnections = parseInt(e.target.value);
+        });
+
+        document.getElementById('rotationSpeed').addEventListener('input', (e) => {
+            rotationSpeed = parseFloat(e.target.value);
+        });
+
+        document.getElementById('noiseDistortion').addEventListener('input', (e) => {
+            noiseDistortion = parseFloat(e.target.value);
+        });
+
+        document.getElementById('particleSpeed').addEventListener('input', (e) => {
+            particleSpeed = parseFloat(e.target.value);
+        });
+
+        // Resize canvas
+        function resizeCanvas() {
+            const size = Math.min(window.innerWidth, window.innerHeight) * 0.9;
+            canvas.width = size;
+            canvas.height = size;
+            gl.viewport(0, 0, size, size);
+        }
+
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Render loop with FPS counter
+        let time = 0;
+        let frameCount = 0;
+        let lastFpsUpdate = 0;
+
+        function render() {
+            const now = performance.now();
+            time += 0.016; // ~60fps
+            frameCount++;
+            
+            // Update FPS counter every second
+            if (now - lastFpsUpdate > 1000) {
+                const fps = Math.round(frameCount * 1000 / (now - lastFpsUpdate));
+                document.getElementById('fpsCounter').textContent = fps;
+                frameCount = 0;
+                lastFpsUpdate = now;
+            }
+            
+            // Check if we need to switch cluster center
+            if (time - lastClusterSwitch > CLUSTER_SWITCH_INTERVAL) {
+                generateNewClusterCenter();
+                lastClusterSwitch = time;
+            }
+            
+            // Update particles
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const p = particles[i];
+                
+                // Apply noise-based forces for organic movement
+                const noiseX = noise3D(p.x * 2, time * 0.5, p.z * 2) - 0.5;
+                const noiseY = noise3D(p.x * 2 + 100, time * 0.5, p.z * 2) - 0.5;
+                const noiseZ = noise3D(p.x * 2 + 200, time * 0.5, p.z * 2) - 0.5;
+                
+                p.vx += noiseX * noiseDistortion;
+                p.vy += noiseY * noiseDistortion;
+                p.vz += noiseZ * noiseDistortion;
+                
+                // Apply velocity with speed multiplier
+                p.x += p.vx * particleSpeed;
+                p.y += p.vy * particleSpeed;
+                p.z += p.vz * particleSpeed;
+                
+                // Age particle
+                p.age += 0.016;
+                
+                // Respawn if dead - spawn in current cluster
+                if (p.age >= p.life) {
+                    const newParticle = spawnParticleInCluster();
+                    p.x = newParticle.x;
+                    p.y = newParticle.y;
+                    p.z = newParticle.z;
+                    p.vx = newParticle.vx;
+                    p.vy = newParticle.vy;
+                    p.vz = newParticle.vz;
+                    p.age = 0;
+                    p.life = newParticle.life;
+                }
+                
+                // Update arrays
+                particlePositions[i * 3] = p.x;
+                particlePositions[i * 3 + 1] = p.y;
+                particlePositions[i * 3 + 2] = p.z;
+                particleAges[i] = p.age;
+                particleLives[i] = p.life;
+            }
+            
+            // Generate connections between nearby particles (every frame)
+            generateConnections();
+            
+            // Clear
+            gl.clearColor(0, 0, 0, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.enable(gl.DEPTH_TEST);
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+            
+            // Setup matrices
+            const rotation = time * rotationSpeed; // Variable rotation speed
+            const eye = [
+                Math.cos(rotation) * 8,
+                2,
+                Math.sin(rotation) * 8
+            ];
+            const projection = perspective(Math.PI / 4, 1, 0.1, 100);
+            const view = lookAt(eye, [0, 0, 0], [0, 1, 0]);
+            
+            // Render particles
+            gl.useProgram(particleProgram);
+            
+            // Upload particle data
+            gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, particlePositions, gl.DYNAMIC_DRAW);
+            const positionLoc = gl.getAttribLocation(particleProgram, 'position');
+            gl.enableVertexAttribArray(positionLoc);
+            gl.vertexAttribPointer(positionLoc, 3, gl.FLOAT, false, 0, 0);
+            
+            gl.bindBuffer(gl.ARRAY_BUFFER, ageBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, particleAges, gl.DYNAMIC_DRAW);
+            const ageLoc = gl.getAttribLocation(particleProgram, 'age');
+            gl.enableVertexAttribArray(ageLoc);
+            gl.vertexAttribPointer(ageLoc, 1, gl.FLOAT, false, 0, 0);
+            
+            gl.bindBuffer(gl.ARRAY_BUFFER, lifeBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, particleLives, gl.DYNAMIC_DRAW);
+            const lifeLoc = gl.getAttribLocation(particleProgram, 'life');
+            gl.enableVertexAttribArray(lifeLoc);
+            gl.vertexAttribPointer(lifeLoc, 1, gl.FLOAT, false, 0, 0);
+            
+            // Set uniforms
+            gl.uniformMatrix4fv(gl.getUniformLocation(particleProgram, 'projection'), false, projection);
+            gl.uniformMatrix4fv(gl.getUniformLocation(particleProgram, 'view'), false, view);
+            gl.uniform1f(gl.getUniformLocation(particleProgram, 'time'), time);
+            
+            gl.drawArrays(gl.POINTS, 0, PARTICLE_COUNT);
+            
+            // Render connections between particles
+            if (connectionVertices.length > 0) {
+                gl.useProgram(gridProgram);
+                
+                gl.bindBuffer(gl.ARRAY_BUFFER, connectionBuffer);
+                const gridPositionLoc = gl.getAttribLocation(gridProgram, 'position');
+                const gridAlphaLoc = gl.getAttribLocation(gridProgram, 'alpha');
+                
+                gl.enableVertexAttribArray(gridPositionLoc);
+                gl.vertexAttribPointer(gridPositionLoc, 3, gl.FLOAT, false, 16, 0); // stride 16 bytes (3 pos + 1 alpha)
+                
+                gl.enableVertexAttribArray(gridAlphaLoc);
+                gl.vertexAttribPointer(gridAlphaLoc, 1, gl.FLOAT, false, 16, 12); // offset 12 bytes
+                
+                gl.uniformMatrix4fv(gl.getUniformLocation(gridProgram, 'projection'), false, projection);
+                gl.uniformMatrix4fv(gl.getUniformLocation(gridProgram, 'view'), false, view);
+                
+                gl.drawArrays(gl.LINES, 0, connectionVertices.length / 4); // 4 values per vertex now
+            }
+            
+            requestAnimationFrame(render);
+        }
+
+        render();
+    </script>
+</body>
+</html>

@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Owen Doherty - Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <svg style="display: none;">
+        <defs>
+            <filter id="outline-stroke">
+                <feMorphology operator="dilate" radius="1" in="SourceAlpha" result="dilated"/>
+                <feFlood flood-color="black" flood-opacity="1" result="flood"/>
+                <feComposite in="flood" in2="dilated" operator="in" result="outline"/>
+                <feComposite in="SourceGraphic" in2="outline" operator="over"/>
+            </filter>
+        </defs>
+    </svg>
+</head>
+<body>
+    <div class="background-pattern"></div>
+    
+    <main class="container home-view" id="home-view">
+        <!-- Split lines positioned at body level to ensure viewport positioning -->
+        <div class="split-line split-line-left" data-menu-item="data-analysis"></div>
+        <div class="split-line split-line-right" data-menu-item="data-analysis"></div>
+        <div class="split-line split-line-left" data-menu-item="app-designer"></div>
+        <div class="split-line split-line-right" data-menu-item="app-designer"></div>
+        <div class="split-line split-line-left" data-menu-item="about-me"></div>
+        <div class="split-line split-line-right" data-menu-item="about-me"></div>
+        <nav class="menu-container">
+            <div class="menu-item" data-menu="data-analysis">
+                <span class="menu-text">DATA ANALYSIS</span>
+                <div class="menu-cursor">▶</div>
+                <div class="menu-hover-image-container">
+                    <img src="menu option.png" alt="" class="menu-hover-image">
+                </div>
+                <img src="backdrop.png" alt="" class="gear-backdrop">
+                <div class="menu-gears-container">
+                    <img src="gear 1.png" alt="" class="gear gear-1">
+                    <img src="gear 2.png" alt="" class="gear gear-2">
+                    <img src="gear 3.png" alt="" class="gear gear-3">
+                    <img src="gear 4.png" alt="" class="gear gear-4">
+                    <img src="gear 5.png" alt="" class="gear gear-5">
+                </div>
+            </div>
+            <div class="menu-item" data-menu="app-designer">
+                <span class="menu-text">APP DESIGNER</span>
+                <div class="menu-cursor">▶</div>
+                <div class="menu-hover-image-container">
+                    <img src="menu option.png" alt="" class="menu-hover-image">
+                </div>
+                <img src="backdrop.png" alt="" class="gear-backdrop">
+                <div class="menu-gears-container">
+                    <img src="gear 1.png" alt="" class="gear gear-1">
+                    <img src="gear 2.png" alt="" class="gear gear-2">
+                    <img src="gear 3.png" alt="" class="gear gear-3">
+                    <img src="gear 4.png" alt="" class="gear gear-4">
+                    <img src="gear 5.png" alt="" class="gear gear-5">
+                </div>
+            </div>
+            <div class="menu-item" data-menu="about-me">
+                <span class="menu-text">ABOUT ME</span>
+                <div class="menu-cursor">▶</div>
+                <div class="menu-hover-image-container">
+                    <img src="menu option.png" alt="" class="menu-hover-image">
+                </div>
+                <img src="backdrop.png" alt="" class="gear-backdrop">
+                <div class="menu-gears-container">
+                    <img src="gear 1.png" alt="" class="gear gear-1">
+                    <img src="gear 2.png" alt="" class="gear gear-2">
+                    <img src="gear 3.png" alt="" class="gear gear-3">
+                    <img src="gear 4.png" alt="" class="gear gear-4">
+                    <img src="gear 5.png" alt="" class="gear gear-5">
+                </div>
+            </div>
+        </nav>
+    </main>
+    
+    <!-- Pre-rendered ASCII art for click ripple (hidden, cloned on click) -->
+    <div id="ascii-ripple-template" class="ascii-ripple-template" aria-hidden="true">
+        <pre class="ascii-ripple-pre"></pre>
+    </div>
+    
+    <!-- Content Pages -->
+    <div class="content-page" id="data-analysis-page">
+        <div class="page-scroll-wrapper">
+        <div class="page-top-section">
+            <nav class="page-top-nav">
+                <div class="nav-item nav-home" data-nav="home">HOME</div>
+                <div class="nav-item nav-active" data-nav="data-analysis">DATA ANALYSIS</div>
+                <div class="nav-item" data-nav="app-designer">APP DESIGNER</div>
+                <div class="nav-item" data-nav="about-me">ABOUT ME</div>
+            </nav>
+            <div class="page-header">
+                <div class="page-title-bg" aria-hidden="true"></div>
+                <h1 class="page-title">DATA ANALYSIS</h1>
+            </div>
+        </div>
+        <div class="page-grid-background"></div>
+        <div class="page-layout">
+            <div class="page-left-panel">
+                <div class="panel-header">Projects</div>
+                <div class="panel-list">
+                    <div class="list-item active" data-subcategory="automated-data-analysis">
+                        <span class="item-icon">●</span>
+                        <span class="item-name">Automated Data Analysis</span>
+                    </div>
+                    <div class="list-item" data-subcategory="influencer-os">
+                        <span class="item-icon">○</span>
+                        <span class="item-name">Influencer OS</span>
+                    </div>
+                </div>
+            </div>
+            <div class="page-center-panel">
+                <div class="panel-header details-panel-header">Details</div>
+                <div class="content-display">
+                    <div class="subcategory-content active" data-content="automated-data-analysis">
+                        <div class="content-text">
+                            <p>An end-to-end pipeline that collects, cleans, analyzes, and visualizes data with minimal manual input.</p>
+
+                            <div class="analysis-step">
+                                <img src="Automated Data Analysis Project/Prior Step 1.png" alt="Prior Step 1: Data upload" class="analysis-screenshot">
+                                <p class="step-caption"><strong>Prior Step 1 — Data upload.</strong> Users drag and drop a file (CSV, JSON, or Excel) to begin. The system accepts the raw dataset before any cleaning or analysis.</p>
+                            </div>
+
+                            <div class="analysis-step">
+                                <img src="Automated Data Analysis Project/Step 1.png" alt="Step 1: Data collection, cleaning & transformation" class="analysis-screenshot">
+                                <p class="step-caption"><strong>Step 1 — Data collection, cleaning & transformation.</strong> Data is gathered, checked for duplicates and nulls, and prepared. A preview and quality score show the dataset is ready for analysis.</p>
+                            </div>
+
+                            <div class="analysis-step">
+                                <img src="Automated Data Analysis Project/Step 2.png" alt="Step 2: Analysis & modeling" class="analysis-screenshot">
+                                <p class="step-caption"><strong>Step 2 — Analysis & modeling.</strong> Descriptive statistics and correlations are computed automatically. The system surfaces relationships (e.g., Sales vs Units) and suggests further modeling.</p>
+                            </div>
+
+                            <div class="analysis-step">
+                                <img src="Automated Data Analysis Project/Step 3.png" alt="Step 3: Interpretation" class="analysis-screenshot">
+                                <p class="step-caption"><strong>Step 3 — Interpretation.</strong> Results are summarized in plain language. Key insights and recommendations are generated so users can act on the findings without deep statistical knowledge.</p>
+                            </div>
+
+                            <div class="analysis-step analysis-step-4">
+                                <img src="Automated Data Analysis Project/Step 4.1.png" alt="Step 4.1: Visualization - Sales analysis" class="analysis-screenshot">
+                                <img src="Automated Data Analysis Project/Step 4.2.png" alt="Step 4.2: Visualization - Units analysis" class="analysis-screenshot">
+                                <img src="Automated Data Analysis Project/Step 4.3.png" alt="Step 4.3: Visualization - Distributions and correlation matrix" class="analysis-screenshot">
+                                <img src="Automated Data Analysis Project/Step 4.4.png" alt="Step 4.4: Visualization - Correlation scatter plot" class="analysis-screenshot">
+                                <p class="step-caption"><strong>Step 4 — Visualization & reporting.</strong> Time series (Sales and Units), distributions with normal curves, a correlation matrix, and a scatter plot with regression line are produced. Users can export reports (PDF), cleaned data (CSV), and charts (PNG).</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="subcategory-content" data-content="influencer-os">
+                        <div class="content-text">
+                            <p>AI-driven workflow that adapts content, creates influence, and gains traction through triggers, planning, generation, and learning phases.</p>
+                            <div class="embed-window embed-window-zoom">
+                                <iframe src="Influencer/influencer-os-workflow-final.html" title="Influencer OS Workflow" class="embed-iframe"></iframe>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="page-right-panel">
+                <div class="right-panel-content active" data-content="automated-data-analysis">
+                    <div class="panel-header">Skills</div>
+                    <ul class="right-panel-list">
+                        <li>Data pipeline design</li>
+                        <li>Statistical analysis</li>
+                        <li>Data visualization</li>
+                        <li>Report generation</li>
+                        <li>Data cleaning & transformation</li>
+                        <li>Correlation & modeling</li>
+                    </ul>
+                    <div class="panel-header">Tools</div>
+                    <ul class="right-panel-list">
+                        <li>Python</li>
+                        <li>SQL</li>
+                        <li>Tableau</li>
+                        <li>Power BI</li>
+                        <li>Excel / CSV</li>
+                    </ul>
+                </div>
+                <div class="right-panel-content" data-content="influencer-os">
+                    <div class="panel-header">Skills</div>
+                    <ul class="right-panel-list">
+                        <li>Workflow design</li>
+                        <li>AI-driven content strategy</li>
+                        <li>Trigger & planning systems</li>
+                        <li>Visual diagramming</li>
+                    </ul>
+                    <div class="panel-header">Tools</div>
+                    <ul class="right-panel-list">
+                        <li>N8N / workflow automation</li>
+                        <li>AI & LLM integration</li>
+                        <li>Diagram / flowchart tools</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <div class="page-footer-title-bg" aria-hidden="true">OWEN DOHERTY</div>
+            <div class="page-footer-credit">
+                <span class="page-footer-byline">developed & designed by</span>
+                <h2 class="page-footer-title">OWEN DOHERTY</h2>
+            </div>
+        </div>
+        </div>
+    </div>
+    
+    <div class="content-page" id="app-designer-page">
+        <div class="page-scroll-wrapper">
+        <div class="page-top-section">
+            <nav class="page-top-nav">
+                <div class="nav-item nav-home" data-nav="home">HOME</div>
+                <div class="nav-item" data-nav="data-analysis">DATA ANALYSIS</div>
+                <div class="nav-item nav-active" data-nav="app-designer">APP DESIGNER</div>
+                <div class="nav-item" data-nav="about-me">ABOUT ME</div>
+            </nav>
+            <div class="page-header">
+                <div class="page-title-bg" aria-hidden="true"></div>
+                <h1 class="page-title">APP DESIGNER</h1>
+            </div>
+        </div>
+        <div class="page-grid-background"></div>
+        <div class="page-layout">
+            <div class="page-left-panel">
+                <div class="panel-header">Applications</div>
+                <div class="panel-list">
+                    <div class="list-item active" data-subcategory="bandhouse">
+                        <span class="item-icon">●</span>
+                        <span class="item-name">BandHouse</span>
+                    </div>
+                    <div class="list-item" data-subcategory="pinhaus">
+                        <span class="item-icon">○</span>
+                        <span class="item-name">PinHaus</span>
+                    </div>
+                </div>
+                <div class="panel-header">Creative Coding</div>
+                <div class="panel-list">
+                    <div class="list-item" data-subcategory="creative-coding-1">
+                        <span class="item-icon">○</span>
+                        <span class="item-name">Abstract Art Generator</span>
+                    </div>
+                    <div class="list-item" data-subcategory="creative-coding-elastic">
+                        <span class="item-icon">○</span>
+                        <span class="item-name">PinHaus Interactive Ripple</span>
+                    </div>
+                    <div class="list-item" data-subcategory="creative-coding-particle-gen">
+                        <span class="item-icon">○</span>
+                        <span class="item-name">The Art of Contagion</span>
+                    </div>
+                    <div class="list-item" data-subcategory="creative-coding-particle-grid">
+                        <span class="item-icon">○</span>
+                        <span class="item-name">Bonds Within Noise</span>
+                    </div>
+                    <div class="list-item" data-subcategory="creative-coding-particle-death">
+                        <span class="item-icon">○</span>
+                        <span class="item-name">Bioluminescent</span>
+                    </div>
+                </div>
+            </div>
+            <div class="page-center-panel">
+                <div class="panel-header details-panel-header">Details</div>
+                <div class="content-display">
+                    <div class="subcategory-content active" data-content="bandhouse">
+                        <div class="content-text">
+                            <div class="bandhouse-logo-container">
+                                <img src="Band House Poster.png" alt="Band House Poster" class="bandhouse-logo">
+                                <a href="https://apps.apple.com/us/app/bandhouse-live/id6755076527" target="_blank" rel="noopener noreferrer" class="bandhouse-appstore-link"><em>link to appstore</em></a>
+                            </div>
+                            <div class="detail-copy">
+                                <h4>Where The Idea Came From</h4>
+                                <p>BandHouse began as a project in an entrepreneurship course, where my future co-founder proposed the idea of organizing local shows through a stronger communication platform connecting bands and house venues. The concept aligned closely with my interests, and we moved forward with user research to better understand the problem space. After conducting more than twenty interviews, we identified a consistent pattern: many people wanted to attend more local shows, but often couldn’t find information on the shows at all.</p>
+                                <p>This insight revealed a broader issue with the lack of clear communication between showgoers and hosts. In response, I shifted the application’s focus toward organization and coordination within the local music scene. Rather than relying solely on individual social media accounts to attract attention, BandHouse provides a shared platform where every show and band has equal visibility, regardless of size or following. For audiences, this means easier access to lesser-known events and more reliable weekend planning. For hosts and performers, it offers free access to a broader and more engaged audience.</p>
+
+                                <div class="pinhaus-carousel" aria-label="BandHouse app screenshots">
+                                    <button type="button" class="pinhaus-carousel-arrow pinhaus-carousel-prev" aria-label="Previous screenshot"><img src="Arrow 2.png" alt=""></button>
+                                    <div class="pinhaus-carousel-row">
+                                        <div class="pinhaus-carousel-peek pinhaus-carousel-left">
+                                            <div class="pinhaus-carousel-stack">
+                                                <div class="pinhaus-carousel-slide" data-index="0"><img src="BandHouse Pre 6.9 1.png" alt="BandHouse – Local Shows"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="1"><img src="BandHouse Pre 6.9 2.png" alt="BandHouse – Event detail"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="2"><img src="BandHouse Pre 6.9 3.png" alt="BandHouse – Post Show"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="3"><img src="BandHouse Pre 6.9 4.png" alt="BandHouse – Profile calendar"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="4"><img src="BandHouse Pre 6.9 5.png" alt="BandHouse – Profile posted"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="5"><img src="BandHouse Pre 6.9 6.png" alt="BandHouse – Map"></div>
+                                            </div>
+                                        </div>
+                                        <div class="pinhaus-carousel-peek pinhaus-carousel-center">
+                                            <div class="pinhaus-carousel-stack">
+                                                <div class="pinhaus-carousel-slide active" data-index="0"><img src="BandHouse Pre 6.9 1.png" alt="BandHouse – Local Shows"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="1"><img src="BandHouse Pre 6.9 2.png" alt="BandHouse – Event detail"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="2"><img src="BandHouse Pre 6.9 3.png" alt="BandHouse – Post Show"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="3"><img src="BandHouse Pre 6.9 4.png" alt="BandHouse – Profile calendar"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="4"><img src="BandHouse Pre 6.9 5.png" alt="BandHouse – Profile posted"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="5"><img src="BandHouse Pre 6.9 6.png" alt="BandHouse – Map"></div>
+                                            </div>
+                                        </div>
+                                        <div class="pinhaus-carousel-peek pinhaus-carousel-right">
+                                            <div class="pinhaus-carousel-stack">
+                                                <div class="pinhaus-carousel-slide" data-index="0"><img src="BandHouse Pre 6.9 1.png" alt="BandHouse – Local Shows"></div>
+                                                <div class="pinhaus-carousel-slide active" data-index="1"><img src="BandHouse Pre 6.9 2.png" alt="BandHouse – Event detail"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="2"><img src="BandHouse Pre 6.9 3.png" alt="BandHouse – Post Show"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="3"><img src="BandHouse Pre 6.9 4.png" alt="BandHouse – Profile calendar"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="4"><img src="BandHouse Pre 6.9 5.png" alt="BandHouse – Profile posted"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="5"><img src="BandHouse Pre 6.9 6.png" alt="BandHouse – Map"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="pinhaus-carousel-arrow pinhaus-carousel-next" aria-label="Next screenshot"><img src="Arrow 2.png" alt=""></button>
+                                </div>
+
+                                <h4>Project Roles</h4>
+                                <p>This is a collaborative project with clearly split product and growth responsibilities.</p>
+                                <p>I lead the product and engineering side, handling the full app build from design to deployment. That includes shaping the user experience, developing the iOS frontend, structuring the backend, and creating the visual assets used for in-app and social promotion.</p>
+                                <p>My co-founder leads community growth and live operations. He focuses on getting BandHouse into the local scene by promoting the platform, building relationships with bands and house venues, and organizing live shows that are hosted and sponsored under the BandHouse name.</p>
+
+                                <h4>Tech Stack</h4>
+                                <ul class="detail-list">
+                                    <li><strong>iOS:</strong> Swift, SwiftUI</li>
+                                    <li><strong>Backend:</strong> Firebase (Auth, Firestore, Storage, Cloud Functions)</li>
+                                    <li><strong>Hosting / Web:</strong> Github Pages (Currently placeholder, for app store regulations)</li>
+                                </ul>
+
+                                <p class="detail-footer">BandHouse is a community-driven platform that brings structure to the local music scene by centralizing how shows and bands are shared and discovered. It gives every event equal visibility while helping audiences reliably find and plan for live performances.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="subcategory-content" data-content="pinhaus">
+                        <div class="content-text">
+                            <div class="pinhaus-image-container">
+                                <img src="PinHaus Layered Image.png" alt="PinHaus Layered Image" class="pinhaus-image">
+                                <a href="https://www.pinhaus.app/" target="_blank" rel="noopener noreferrer" class="pinhaus-website-link"><em>link to website</em></a>
+                            </div>
+                            <div class="detail-copy">
+                                <h4>Where The Idea Came From</h4>
+                                <p>Many people I spoke with and later interviewed described improving their personal style as overwhelming and difficult to navigate. Most preferred to stay with what they already knew rather than invest time in exploring new aesthetics. Through my own reflection, I reached the same conclusion. Developing a sense of style can be a time-intensive process. I had to seek out specific communities on social media, adjust my algorithm to surface more fashion-focused content, and use Pinterest to organize visual references. The process requires significant time, and the path is often unclear.</p>
+                                <p>This experience led to the creation of PinHaus. I drew inspiration from Pinterest’s success in visual and aesthetic discovery, along with the absence of similar discovery tools in clothing platforms such as Depop, eBay, and Poshmark. By combining these models, I developed a platform centered on moodboards. Moodboards allow micro-trends to be saved, shared, and collected in a structured way. When paired with secondhand fashion, this creates an affordable, community-driven marketplace that keeps trends organized and accessible.                                </p>
+
+                                <div class="pinhaus-carousel" aria-label="PinHaus app screenshots">
+                                    <button type="button" class="pinhaus-carousel-arrow pinhaus-carousel-prev" aria-label="Previous screenshot"><img src="Arrow 2.png" alt=""></button>
+                                    <div class="pinhaus-carousel-row">
+                                        <div class="pinhaus-carousel-peek pinhaus-carousel-left">
+                                            <div class="pinhaus-carousel-stack">
+                                                <div class="pinhaus-carousel-slide" data-index="0"><img src="IMG_2037 2.PNG" alt="PinHaus – Recommended for You"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="1"><img src="IMG_2039 2.PNG" alt="PinHaus – Pin to Board"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="2"><img src="IMG_2038 2.PNG" alt="PinHaus – Product listing"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="3"><img src="IMG_2036 2.PNG" alt="PinHaus – The Student Collection"></div>
+                                            </div>
+                                        </div>
+                                        <div class="pinhaus-carousel-peek pinhaus-carousel-center">
+                                            <div class="pinhaus-carousel-stack">
+                                                <div class="pinhaus-carousel-slide active" data-index="0"><img src="IMG_2037 2.PNG" alt="PinHaus – Recommended for You"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="1"><img src="IMG_2039 2.PNG" alt="PinHaus – Pin to Board"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="2"><img src="IMG_2038 2.PNG" alt="PinHaus – Product listing"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="3"><img src="IMG_2036 2.PNG" alt="PinHaus – The Student Collection"></div>
+                                            </div>
+                                        </div>
+                                        <div class="pinhaus-carousel-peek pinhaus-carousel-right">
+                                            <div class="pinhaus-carousel-stack">
+                                                <div class="pinhaus-carousel-slide" data-index="0"><img src="IMG_2037 2.PNG" alt="PinHaus – Recommended for You"></div>
+                                                <div class="pinhaus-carousel-slide active" data-index="1"><img src="IMG_2039 2.PNG" alt="PinHaus – Pin to Board"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="2"><img src="IMG_2038 2.PNG" alt="PinHaus – Product listing"></div>
+                                                <div class="pinhaus-carousel-slide" data-index="3"><img src="IMG_2036 2.PNG" alt="PinHaus – The Student Collection"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="pinhaus-carousel-arrow pinhaus-carousel-next" aria-label="Next screenshot"><img src="Arrow 2.png" alt=""></button>
+                                </div>
+
+                                <h4>My Role</h4>
+                                <p>This is a solo project where I handled both product design and engineering:</p>
+                                <ul class="detail-list">
+                                    <li>Designed the board-based marketplace system and user flows</li>
+                                    <li>Built the iOS frontend in SwiftUI</li>
+                                    <li>Set up Firebase backend and real-time database structure</li>
+                                    <li>Integrated Stripe Connect for seller payouts and Apple Pay for checkout</li>
+                                    <li>Deployed and tested the app using TestFlight and App Store Connect</li>
+                                </ul>
+
+                                <h4>Tech Stack</h4>
+                                <ul class="detail-list">
+                                    <li><strong>iOS:</strong> Swift, SwiftUI</li>
+                                    <li><strong>Backend:</strong> Firebase (Auth, Firestore, Storage, Cloud Functions)</li>
+                                    <li><strong>Payments:</strong> Stripe Connect, Apple Pay</li>
+                                    <li><strong>Hosting / Web:</strong> Cloudflare Pages (landing + verification domains)</li>
+                                </ul>
+
+                                <p class="detail-footer">Built as an independent product experiment in marketplace design and mobile systems.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="subcategory-content" data-content="creative-coding-1">
+                        <div class="art-generator-container">
+                            <canvas id="artCanvas" width="1000" height="700"></canvas>
+                            
+                            <div class="art-controls" id="artControls">
+                                <div class="art-controls-header" onclick="toggleArtControls()">CONTROLS</div>
+                                <div class="art-controls-content">
+                                    <div class="art-control-group">
+                                        <label>Background Color</label>
+                                        <input type="color" id="artBgColor" value="#f3f1f1" class="art-color-picker">
+                                    </div>
+                                    
+                                    <div class="art-control-group">
+                                        <label>Grid Size</label>
+                                        <input type="range" id="artGridSize" min="150" max="400" value="280">
+                                    </div>
+                                    
+                                    <div class="art-control-group">
+                                        <label>Grid Teleport Time (sec)</label>
+                                        <input type="range" id="artGridTeleportTime" min="3" max="15" value="8">
+                                    </div>
+                                    
+                                    <div class="art-control-group">
+                                        <label>Movement Scale</label>
+                                        <input type="range" id="artMovementScale" min="1" max="10" value="5">
+                                    </div>
+                                    
+                                    <div class="art-control-group">
+                                        <label>Color Saturation</label>
+                                        <input type="range" id="artColorSaturation" min="50" max="150" value="100">
+                                    </div>
+                                    
+                                    <div class="art-control-group">
+                                        <label>Composition Density</label>
+                                        <input type="range" id="artCompositionDensity" min="8" max="25" value="8">
+                                    </div>
+                                    
+                                    <div class="art-control-group">
+                                        <label>Pixelated Lines</label>
+                                        <input type="range" id="artPixelLineCount" min="4" max="8" value="5">
+                                    </div>
+                                    
+                                    <div class="art-control-group">
+                                        <label>Shape Squares</label>
+                                        <input type="range" id="artShapeSquareCount" min="2" max="8" value="4">
+                                    </div>
+                                    
+                                    <div class="art-control-group">
+                                        <label>Visual Density</label>
+                                        <input type="range" id="artVisualDensity" min="50" max="150" value="100">
+                                    </div>
+                                    
+                                    <div class="art-control-group">
+                                        <label>Textural Complexity</label>
+                                        <input type="range" id="artTexturalComplexity" min="1" max="10" value="6">
+                                    </div>
+                                    
+                                    <div class="art-control-group">
+                                        <label>Photographic Elements</label>
+                                        <input type="range" id="artPhotoElements" min="0" max="12" value="6">
+                                    </div>
+                                    
+                                    <div class="art-control-group">
+                                        <label>Organic Balance</label>
+                                        <input type="range" id="artOrganicBalance" min="0" max="100" value="1">
+                                    </div>
+                                    
+                                    <div class="art-control-group">
+                                        <label>Focal Hierarchy</label>
+                                        <input type="range" id="artFocalHierarchy" min="1" max="5" value="3">
+                                    </div>
+                                    
+                                    <div class="art-control-group">
+                                        <label>Color Mode</label>
+                                        <select id="artColorMode">
+                                            <option value="vibrant">Vibrant</option>
+                                            <option value="neon">Neon</option>
+                                            <option value="pastel">Pastel</option>
+                                            <option value="monochrome">Monochrome</option>
+                                        </select>
+                                    </div>
+                                    
+                                    <button onclick="regenerateArt()">NEW COMPOSITION</button>
+                                    <button onclick="saveArtImage()">SAVE IMAGE</button>
+                                </div>
+                            </div>
+                            <p class="art-piece-explanation">Automation of color and composition, continuously creating a new art piece every 6 seconds.</p>
+                        </div>
+                    </div>
+                    <div class="subcategory-content" data-content="creative-coding-elastic">
+                        <div class="content-text">
+                            <div class="embed-cc-window embed-cc-elastic">
+                                <iframe src="Creative Coding/elastic_grid_network.html" title="PinHaus Interactive Ripple" class="embed-cc-iframe"></iframe>
+                            </div>
+                            <p class="art-piece-explanation">Click and drag to spawn ripples of letters. Used as a simple and engaging effect for the PinHaus website.</p>
+                        </div>
+                    </div>
+                    <div class="subcategory-content" data-content="creative-coding-particle-gen">
+                        <div class="content-text">
+                            <div class="embed-cc-window embed-cc-particle-gen">
+                                <iframe src="Creative Coding/particle_generator_embed.html" title="The Art of Contagion" class="embed-cc-iframe"></iframe>
+                            </div>
+                            <p class="art-piece-explanation">Drag the mouse over particles to spread the "virus." An infectious flowing flower like pattern emerges.</p>
+                        </div>
+                    </div>
+                    <div class="subcategory-content" data-content="creative-coding-particle-grid">
+                        <div class="content-text">
+                            <div class="embed-cc-window embed-cc-particle-grid">
+                                <iframe src="Creative Coding/particle_grid_system_embed.html" title="Bonds Within Noise" class="embed-cc-iframe"></iframe>
+                            </div>
+                            <p class="art-piece-explanation">Noise particles spawned at random points within a contained grid, spreading from force and noise distortion and connected at random. An interpretation of a view into human connection and relationships.</p>
+                        </div>
+                    </div>
+                    <div class="subcategory-content" data-content="creative-coding-particle-death">
+                        <div class="content-text">
+                            <div class="embed-cc-window embed-cc-particle-death">
+                                <iframe src="Creative Coding/particle_system_death_split_embed.html" title="Bioluminescent" class="embed-cc-iframe"></iframe>
+                            </div>
+                            <p class="art-piece-explanation">Please wait a second or two to watch these particles glow. A visual representation of blue fireworks in combination with bioluminescent activities.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="page-right-panel">
+                <div class="right-panel-content active" data-content="bandhouse">
+                    <div class="panel-header">Skills</div>
+                    <ul class="right-panel-list">
+                        <li>iOS development (SwiftUI)</li>
+                        <li>Backend architecture</li>
+                        <li>User research & interviews</li>
+                        <li>Product & engineering ownership</li>
+                        <li>App Store deployment</li>
+                    </ul>
+                    <div class="panel-header">Tools</div>
+                    <ul class="right-panel-list">
+                        <li>Swift / Xcode</li>
+                        <li>Firebase (Auth, Firestore, Storage)</li>
+                        <li>TestFlight</li>
+                        <li>GitHub Pages</li>
+                    </ul>
+                </div>
+                <div class="right-panel-content" data-content="pinhaus">
+                    <div class="panel-header">Skills</div>
+                    <ul class="right-panel-list">
+                        <li>Marketplace design</li>
+                        <li>iOS development (SwiftUI)</li>
+                        <li>Payment integration</li>
+                        <li>Visual discovery & moodboards</li>
+                        <li>Solo product & engineering</li>
+                    </ul>
+                    <div class="panel-header">Tools</div>
+                    <ul class="right-panel-list">
+                        <li>Swift / Xcode</li>
+                        <li>Firebase (Auth, Firestore, Storage, Cloud Functions)</li>
+                        <li>Stripe Connect / Apple Pay</li>
+                        <li>Cloudflare Pages</li>
+                        <li>TestFlight / App Store Connect</li>
+                    </ul>
+                </div>
+                <div class="right-panel-content" data-content="creative-coding-1">
+                    <div class="panel-header">Skills</div>
+                    <ul class="right-panel-list">
+                        <li>Generative art & composition</li>
+                        <li>Canvas rendering</li>
+                        <li>Parameter-driven design</li>
+                        <li>Color & layout automation</li>
+                    </ul>
+                    <div class="panel-header">Tools</div>
+                    <ul class="right-panel-list">
+                        <li>JavaScript</li>
+                        <li>HTML5 Canvas</li>
+                        <li>CSS</li>
+                    </ul>
+                </div>
+                <div class="right-panel-content" data-content="creative-coding-elastic">
+                    <div class="panel-header">Skills</div>
+                    <ul class="right-panel-list">
+                        <li>Interactive typography</li>
+                        <li>Ripple & letter animation</li>
+                        <li>Event-driven interaction</li>
+                    </ul>
+                    <div class="panel-header">Tools</div>
+                    <ul class="right-panel-list">
+                        <li>JavaScript</li>
+                        <li>HTML / CSS / DOM</li>
+                    </ul>
+                </div>
+                <div class="right-panel-content" data-content="creative-coding-particle-gen">
+                    <div class="panel-header">Skills</div>
+                    <ul class="right-panel-list">
+                        <li>Particle systems</li>
+                        <li>Noise-based movement</li>
+                        <li>Mouse-driven interaction</li>
+                        <li>Contagion / spread simulation</li>
+                    </ul>
+                    <div class="panel-header">Tools</div>
+                    <ul class="right-panel-list">
+                        <li>JavaScript</li>
+                        <li>HTML5 Canvas</li>
+                    </ul>
+                </div>
+                <div class="right-panel-content" data-content="creative-coding-particle-grid">
+                    <div class="panel-header">Skills</div>
+                    <ul class="right-panel-list">
+                        <li>Particle systems</li>
+                        <li>Noise distortion</li>
+                        <li>Force & connection logic</li>
+                        <li>Grid-based generation</li>
+                    </ul>
+                    <div class="panel-header">Tools</div>
+                    <ul class="right-panel-list">
+                        <li>JavaScript</li>
+                        <li>HTML5 Canvas</li>
+                    </ul>
+                </div>
+                <div class="right-panel-content" data-content="creative-coding-particle-death">
+                    <div class="panel-header">Skills</div>
+                    <ul class="right-panel-list">
+                        <li>Particle systems</li>
+                        <li>Visual effects (glow, trails)</li>
+                        <li>Bioluminescence-style rendering</li>
+                    </ul>
+                    <div class="panel-header">Tools</div>
+                    <ul class="right-panel-list">
+                        <li>JavaScript</li>
+                        <li>HTML5 Canvas</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="page-footer">
+            <div class="page-footer-title-bg" aria-hidden="true">OWEN DOHERTY</div>
+            <div class="page-footer-credit">
+                <span class="page-footer-byline">developed & designed by</span>
+                <h2 class="page-footer-title">OWEN DOHERTY</h2>
+            </div>
+        </div>
+        </div>
+    </div>
+    
+    <div class="content-page" id="about-me-page">
+        <div class="page-scroll-wrapper">
+        <div class="page-top-section">
+            <nav class="page-top-nav">
+                <div class="nav-item nav-home" data-nav="home">HOME</div>
+                <div class="nav-item" data-nav="data-analysis">DATA ANALYSIS</div>
+                <div class="nav-item" data-nav="app-designer">APP DESIGNER</div>
+                <div class="nav-item nav-active" data-nav="about-me">ABOUT ME</div>
+            </nav>
+            <div class="page-header">
+                <div class="page-title-bg" aria-hidden="true"></div>
+                <h1 class="page-title">ABOUT ME</h1>
+            </div>
+        </div>
+        <div class="page-grid-background"></div>
+        <div class="page-layout">
+            <div class="page-left-panel">
+                <div class="panel-header">Information</div>
+                <div class="panel-list">
+                    <div class="list-item active" data-subcategory="background">
+                        <span class="item-icon">●</span>
+                        <span class="item-name">Background</span>
+                    </div>
+                    <div class="list-item" data-subcategory="resume">
+                        <span class="item-icon">○</span>
+                        <span class="item-name">Resume</span>
+                    </div>
+                    <div class="list-item" data-subcategory="contact">
+                        <span class="item-icon">○</span>
+                        <span class="item-name">Contact</span>
+                    </div>
+                </div>
+            </div>
+            <div class="page-center-panel">
+                <div class="panel-header details-panel-header">Details</div>
+                <div class="content-display">
+                    <div class="subcategory-content active" data-content="background">
+                        <div class="content-text">
+                            <p>I'm a product-focused developer and designer based in San Diego, building apps at the intersection of creativity, systems, and real-world communities. I've founded and shipped projects like BandHouse, an iOS platform for discovering and organizing local live music, and PinHaus, a fashion marketplace that blends visual organization with resale and micro-trend tracking.</p>
+                            <p>My background spans traditional art, 3D design, and frontend/mobile engineering, which lets me move from concept to launch across both design and code. I earned a B.S. in Business (Entrepreneurship) with a Minor in Art from San Diego State University. I'm looking to contribute across product, design, and engineering on teams building thoughtful, well-designed digital products.</p>
+                        </div>
+                    </div>
+                    <div class="subcategory-content" data-content="resume">
+                        <div class="content-text">
+                            <div class="resume-image-container">
+                                <img src="Resume.png" alt="Owen Doherty – Resume" class="resume-image">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="subcategory-content" data-content="contact">
+                        <div class="content-text">
+                            <form class="contact-form" id="contact-form" novalidate>
+                                <label class="contact-from-label">From:</label>
+                                <input type="email" name="email" placeholder="Your email" class="contact-input" required>
+                                <textarea name="message" placeholder="" class="contact-textarea" rows="5" required></textarea>
+                                <div class="contact-form-footer">
+                                    <button type="submit" class="contact-send-btn">Send</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="page-right-panel">
+                <div class="panel-header">Skills</div>
+                <ul class="right-panel-list">
+                    <li>Frontend (React, Next.js, HTML, CSS, JavaScript)</li>
+                    <li>Backend & cloud (Firebase, REST APIs, Cloudflare)</li>
+                    <li>Mobile (iOS, Swift, Xcode, App Store)</li>
+                    <li>DevOps & tools (GitHub, API integration, VS Code)</li>
+                    <li>Generative AI (ComfyUI, N8N, LoRA, prompts)</li>
+                    <li>Creative & media (Photoshop, Illustrator, Blender, Unity, video)</li>
+                    <li>Business & strategy (market research, product roadmapping, user testing)</li>
+                </ul>
+                <div class="panel-header">Tools</div>
+                <ul class="right-panel-list">
+                    <li>React / Next.js</li>
+                    <li>Firebase</li>
+                    <li>Swift / Xcode</li>
+                    <li>Cursor / Claude / GitHub</li>
+                    <li>Adobe Photoshop / Illustrator</li>
+                    <li>Blender / Unity</li>
+                </ul>
+            </div>
+        </div>
+        <div class="page-footer">
+            <div class="page-footer-title-bg" aria-hidden="true">OWEN DOHERTY</div>
+            <div class="page-footer-credit">
+                <span class="page-footer-byline">developed & designed by</span>
+                <h2 class="page-footer-title">OWEN DOHERTY</h2>
+            </div>
+        </div>
+        </div>
+    </div>
+    
+    <div class="transition-overlay"></div>
+    
+    <script src="script.js"></script>
+    <script src="art-generator-full.js"></script>
+</body>
+</html>

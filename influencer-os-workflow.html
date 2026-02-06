@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influencer OS - Workflow Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+            color: #e0e0ff;
+            min-height: 100vh;
+            padding: 40px 20px;
+            overflow-x: auto;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        h1 {
+            font-size: 48px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        .subtitle {
+            font-size: 18px;
+            color: #9999cc;
+            font-weight: 400;
+        }
+
+        .workflow-canvas {
+            position: relative;
+            width: 100%;
+            min-height: 1200px;
+            margin: 0 auto;
+        }
+
+        .layer {
+            position: absolute;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+        }
+
+        .component {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 16px;
+            padding: 24px;
+            position: relative;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            min-width: 200px;
+            max-width: 280px;
+        }
+
+        .component:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 48px rgba(102, 126, 234, 0.3);
+            border-color: rgba(102, 126, 234, 0.6);
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .component.primary {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border: 2px solid rgba(102, 126, 234, 0.5);
+            box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+        }
+
+        .component.trigger {
+            background: linear-gradient(135deg, rgba(52, 211, 153, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+            border: 2px solid rgba(52, 211, 153, 0.5);
+        }
+
+        .component.learning {
+            background: linear-gradient(135deg, rgba(251, 146, 60, 0.1) 0%, rgba(249, 115, 22, 0.1) 100%);
+            border: 2px solid rgba(251, 146, 60, 0.5);
+        }
+
+        .component h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .component .icon {
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .component ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .component li {
+            padding: 6px 0;
+            font-size: 14px;
+            color: #b8b8d8;
+            position: relative;
+            padding-left: 20px;
+        }
+
+        .component li:before {
+            content: "▸";
+            position: absolute;
+            left: 0;
+            color: rgba(102, 126, 234, 0.6);
+        }
+
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .arrow-path {
+            fill: none;
+            stroke: rgba(102, 126, 234, 0.4);
+            stroke-width: 2;
+            stroke-dasharray: 5, 5;
+            animation: dash 20s linear infinite;
+        }
+
+        .arrow-path.active {
+            stroke: rgba(102, 126, 234, 0.8);
+            stroke-width: 3;
+            stroke-dasharray: none;
+            filter: drop-shadow(0 0 8px rgba(102, 126, 234, 0.6));
+        }
+
+        .arrow-path.learning {
+            stroke: rgba(251, 146, 60, 0.6);
+        }
+
+        .arrow-path.trigger {
+            stroke: rgba(52, 211, 153, 0.6);
+        }
+
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -100;
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .legend h4 {
+            font-size: 14px;
+            margin-bottom: 12px;
+            color: #ffffff;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        /* Positioning for components */
+        #n8n-layer { top: 50px; }
+        #brain-server { top: 300px; left: 50%; transform: translateX(-50%); }
+        #supporting-systems { top: 200px; }
+        #generation-pipeline { top: 550px; left: 30%; }
+        #learning-engine { top: 550px; right: 30%; }
+        #workflow-cycle { top: 800px; left: 50%; transform: translateX(-50%); }
+        #dashboard { top: 450px; left: 10%; }
+        #data-storage { top: 450px; right: 10%; }
+
+        .merge-point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: rgba(102, 126, 234, 0.8);
+            border: 2px solid #ffffff;
+            border-radius: 50%;
+            z-index: 10;
+            box-shadow: 0 0 12px rgba(102, 126, 234, 0.8);
+        }
+
+        .phase-label {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: rgba(102, 126, 234, 0.9);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Influencer OS Architecture</h1>
+            <div class="subtitle">AI-Driven TikTok Content Generation & Learning System</div>
+        </div>
+
+        <div class="workflow-canvas">
+            <!-- SVG for arrows -->
+            <svg id="arrows">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="rgba(102, 126, 234, 0.6)" />
+                    </marker>
+                    <marker id="arrowhead-learning" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="rgba(251, 146, 60, 0.6)" />
+                    </marker>
+                </defs>
+            </svg>
+
+            <!-- Phase Labels -->
+            <div class="phase-label" style="top: 20px; left: 50%; transform: translateX(-50%);">Trigger Phase</div>
+            <div class="phase-label" style="top: 270px; left: 50%; transform: translateX(-50%);">Planning Phase</div>
+            <div class="phase-label" style="top: 520px; left: 50%; transform: translateX(-50%);">Generation Phase</div>
+            <div class="phase-label" style="top: 770px; left: 50%; transform: translateX(-50%);">Learning Phase</div>
+
+            <!-- Layer 1: Triggers -->
+            <div class="layer" id="n8n-layer">
+                <div class="component trigger">
+                    <h3><span class="icon">⚡</span>n8n Automation</h3>
+                    <ul>
+                        <li>Daily post planning</li>
+                        <li>4x daily interest updates</li>
+                        <li>Metrics collection</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Layer 2: Supporting Systems -->
+            <div class="layer" id="supporting-systems">
+                <div class="component" style="position: absolute; left: 5%;">
+                    <h3><span class="icon">🎨</span>Personality</h3>
+                    <ul>
+                        <li>Core traits & voice</li>
+                        <li>Evolution phases</li>
+                        <li>Content influences</li>
+                    </ul>
+                </div>
+                <div class="component" style="position: absolute; left: 25%;">
+                    <h3><span class="icon">📊</span>Dashboard</h3>
+                    <ul>
+                        <li>Real-time controls</li>
+                        <li>Weight sliders</li>
+                        <li>Performance charts</li>
+                        <li>Chat interface</li>
+                    </ul>
+                </div>
+                <div class="component" style="position: absolute; right: 25%;">
+                    <h3><span class="icon">💾</span>Data Storage</h3>
+                    <ul>
+                        <li>SQLite per-brain</li>
+                        <li>Posts & metrics</li>
+                        <li>Token tracking</li>
+                        <li>Comments data</li>
+                    </ul>
+                </div>
+                <div class="component" style="position: absolute; right: 5%;">
+                    <h3><span class="icon">🛡️</span>Safety Control</h3>
+                    <ul>
+                        <li>Rate limiting</li>
+                        <li>Cost tracking</li>
+                        <li>System controls</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Central Brain Server -->
+            <div class="component primary" id="brain-server">
+                <h3><span class="icon">🧠</span>Brain Server</h3>
+                <ul>
+                    <li>Node.js/Express core</li>
+                    <li>OpenAI GPT-4o-mini</li>
+                    <li>DALL-E 3 & xAI/Grok</li>
+                    <li>ffmpeg assembly</li>
+                    <li>API endpoints</li>
+                    <li>Multi-brain isolation</li>
+                </ul>
+            </div>
+
+            <!-- Generation and Learning -->
+            <div class="component" id="generation-pipeline">
+                <h3><span class="icon">🎬</span>Content Pipeline</h3>
+                <ul>
+                    <li>Image generation</li>
+                    <li>TTS voiceover</li>
+                    <li>Video assembly</li>
+                    <li>Output final.mp4</li>
+                </ul>
+            </div>
+
+            <div class="component learning" id="learning-engine">
+                <h3><span class="icon">🔄</span>Learning Engine</h3>
+                <ul>
+                    <li>Metrics analysis</li>
+                    <li>Weight adjustment</li>
+                    <li>Trend scraping</li>
+                    <li>Comment analysis</li>
+                    <li>Performance scoring</li>
+                </ul>
+            </div>
+
+            <!-- Workflow Cycle -->
+            <div class="component" id="workflow-cycle">
+                <h3><span class="icon">🔄</span>Complete Cycle</h3>
+                <ul>
+                    <li>Post to TikTok</li>
+                    <li>Collect engagement</li>
+                    <li>Views, likes, comments</li>
+                    <li>Feed back to learning</li>
+                </ul>
+            </div>
+
+            <!-- Merge Points -->
+            <div class="merge-point" style="top: 280px; left: 50%; transform: translateX(-6px);"></div>
+            <div class="merge-point" style="top: 690px; right: 30%; transform: translateX(6px);"></div>
+        </div>
+
+        <!-- Legend -->
+        <div class="legend">
+            <h4>Flow Types</h4>
+            <div class="legend-item">
+                <div class="legend-color" style="background: rgba(102, 126, 234, 0.6);"></div>
+                <span>Primary data flow</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: rgba(52, 211, 153, 0.6);"></div>
+                <span>Trigger flow</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: rgba(251, 146, 60, 0.6);"></div>
+                <span>Learning feedback</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Function to create curved paths
+        function createPath(x1, y1, x2, y2, curve = 0.2) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const cx1 = x1 + dx * curve;
+            const cy1 = y1;
+            const cx2 = x2 - dx * curve;
+            const cy2 = y2;
+            
+            return `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`;
+        }
+
+        // Function to get element center
+        function getElementCenter(id) {
+            const elem = document.getElementById(id);
+            if (!elem) return null;
+            const rect = elem.getBoundingClientRect();
+            const container = document.querySelector('.workflow-canvas').getBoundingClientRect();
+            return {
+                x: rect.left - container.left + rect.width / 2,
+                y: rect.top - container.top + rect.height / 2
+            };
+        }
+
+        // Draw arrows
+        function drawArrows() {
+            const svg = document.getElementById('arrows');
+            svg.innerHTML = svg.innerHTML; // Keep defs
+            
+            // Clear existing paths
+            const existingPaths = svg.querySelectorAll('path');
+            existingPaths.forEach(path => path.remove());
+            
+            const connections = [
+                // n8n to Brain Server
+                {from: 'n8n-layer', to: 'brain-server', class: 'trigger', fromBottom: true, toTop: true},
+                
+                // Supporting systems to Brain Server (merge point)
+                {custom: true, points: [
+                    getElementCenter('supporting-systems'),
+                    {x: getElementCenter('brain-server').x, y: 280}
+                ], class: 'arrow-path'},
+                
+                // Brain Server to Generation Pipeline
+                {from: 'brain-server', to: 'generation-pipeline', class: 'active', fromBottom: true, toTop: true},
+                
+                // Brain Server to Learning Engine  
+                {from: 'brain-server', to: 'learning-engine', class: 'active', fromBottom: true, toTop: true},
+                
+                // Generation Pipeline to Workflow Cycle
+                {from: 'generation-pipeline', to: 'workflow-cycle', class: 'arrow-path', fromBottom: true, toTop: true},
+                
+                // Workflow Cycle to Learning Engine
+                {from: 'workflow-cycle', to: 'learning-engine', class: 'arrow-path', fromTop: true, toBottom: true, curve: 0.4},
+                
+                // Learning feedback loop
+                {from: 'learning-engine', to: 'brain-server', class: 'learning', fromTop: true, toRight: true, curve: -0.5},
+                
+                // Brain Server to Dashboard
+                {from: 'brain-server', to: 'dashboard', class: 'arrow-path', fromLeft: true, toRight: true},
+                
+                // Brain Server to Data Storage
+                {from: 'brain-server', to: 'data-storage', class: 'arrow-path', fromRight: true, toLeft: true},
+                
+                // n8n to Learning Engine (4x daily)
+                {from: 'n8n-layer', to: 'learning-engine', class: 'trigger', fromRight: true, toTop: true, curve: 0.6},
+            ];
+            
+            connections.forEach(conn => {
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                
+                if (conn.custom) {
+                    // Custom path with specific points
+                    const d = createPath(conn.points[0].x, conn.points[0].y, 
+                                       conn.points[1].x, conn.points[1].y, 
+                                       conn.curve || 0.2);
+                    path.setAttribute('d', d);
+                } else {
+                    const from = getElementCenter(conn.from);
+                    const to = getElementCenter(conn.to);
+                    
+                    if (from && to) {
+                        let x1 = from.x, y1 = from.y;
+                        let x2 = to.x, y2 = to.y;
+                        
+                        // Adjust for edge connections
+                        const fromElem = document.getElementById(conn.from);
+                        const toElem = document.getElementById(conn.to);
+                        const fromRect = fromElem.getBoundingClientRect();
+                        const toRect = toElem.getBoundingClientRect();
+                        const container = document.querySelector('.workflow-canvas').getBoundingClientRect();
+                        
+                        if (conn.fromBottom) y1 = fromRect.bottom - container.top;
+                        if (conn.fromTop) y1 = fromRect.top - container.top;
+                        if (conn.fromLeft) x1 = fromRect.left - container.left;
+                        if (conn.fromRight) x1 = fromRect.right - container.left;
+                        
+                        if (conn.toTop) y2 = toRect.top - container.top;
+                        if (conn.toBottom) y2 = toRect.bottom - container.top;
+                        if (conn.toLeft) x2 = toRect.left - container.left;
+                        if (conn.toRight) x2 = toRect.right - container.left;
+                        
+                        const d = createPath(x1, y1, x2, y2, conn.curve || 0.2);
+                        path.setAttribute('d', d);
+                    }
+                }
+                
+                path.setAttribute('class', `arrow-path ${conn.class || ''}`);
+                path.setAttribute('marker-end', conn.class === 'learning' ? 'url(#arrowhead-learning)' : 'url(#arrowhead)');
+                svg.appendChild(path);
+            });
+        }
+        
+        // Initial draw
+        setTimeout(drawArrows, 100);
+        
+        // Redraw on resize
+        window.addEventListener('resize', drawArrows);
+        
+        // Add hover interactions
+        document.querySelectorAll('.component').forEach(comp => {
+            comp.addEventListener('mouseenter', function() {
+                this.style.zIndex = '100';
+            });
+            
+            comp.addEventListener('mouseleave', function() {
+                this.style.zIndex = '';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle System</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #0a0a0a;
+            font-family: Arial, sans-serif;
+        }
+        
+        canvas {
+            border: 1px solid #333;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particleCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set 9:16 aspect ratio
+        const width = 400;
+        const height = Math.floor(width * 16 / 9); // 711px for 9:16 ratio
+        
+        canvas.width = width;
+        canvas.height = height;
+        
+        // Particle system variables
+        const particles = [];
+        const maxParticles = 5000;
+        let lastTime = 0;
+        let burstCount = 0;
+        
+        // Global variables for chain reaction tracking
+        let chainReactionCount = 0;
+        let maxChainReactions = 5;
+        let canStartNewChain = true;
+        
+        // Helper functions defined first
+        function findClosestParticle(targetParticle) {
+            let closest = null;
+            let minDistance = Infinity;
+            
+            for (let particle of particles) {
+                if (particle === targetParticle || particle.hasSplit || particle.isFromSplit) continue;
+                if (particle.life > 0.5) continue; // Only particles at half life or less
+                
+                const dx = particle.x - targetParticle.x;
+                const dy = particle.y - targetParticle.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < minDistance && distance < 50) { // Within 50 pixels
+                    minDistance = distance;
+                    closest = particle;
+                }
+            }
+            
+            return closest;
+        }
+        
+        function triggerChainReaction(particle) {
+            if (chainReactionCount >= maxChainReactions) {
+                return;
+            }
+            
+            if (particle.shouldChainSplit()) {
+                const splitParticles = particle.chainSplit();
+                particles.push(...splitParticles);
+                chainReactionCount++;
+                
+                // Find next closest particle for chain reaction
+                if (chainReactionCount < maxChainReactions) {
+                    const nextClosest = findClosestParticle(particle);
+                    if (nextClosest) {
+                        setTimeout(() => triggerChainReaction(nextClosest), 50); // Small delay for visual effect
+                    }
+                }
+            }
+        }
+        
+        // Particle class
+        class Particle {
+            constructor(x, y, isFromSplit = false) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 0.1; // Reduced horizontal velocity
+                this.vy = -Math.random() * 0.8 - 0.2; // Upward velocity
+                this.size = Math.random() * 4 + 2; // Increased size for visibility
+                this.alpha = 0.6; // Increased transparency
+                this.life = 1;
+                this.decay = Math.random() * 0.002 + 0.0005; // Slower decay for longer life (about 1 second longer)
+                this.hasSplit = false;
+                this.isFromSplit = isFromSplit;
+                this.trail = []; // Array to store trail positions
+                this.maxTrailLength = 20; // Longer trails for better visibility
+                this.canSplitAgain = false; // New property for second split
+                
+                // Color based on whether it's a split particle
+                if (isFromSplit) {
+                    this.color = [255, 80, 80]; // Brighter red for split particles
+                    this.canSplitAgain = true; // Red particles can split again
+                } else {
+                    this.color = [255, 255, 255]; // White for normal particles
+                }
+            }
+            
+            update() {
+                // Store current position in trail
+                this.trail.push({ x: this.x, y: this.y, alpha: this.alpha });
+                
+                // Limit trail length
+                if (this.trail.length > this.maxTrailLength) {
+                    this.trail.shift();
+                }
+                
+                // Apply extremely gentle upward force
+                this.vy -= 0.000028125; // 1/8 of previous force (0.000225 / 8)
+                
+                // Add branching noise - stronger horizontal drift that varies over time
+                const noiseStrength = 0.002; // Reduced by half again
+                const timeOffset = Date.now() * 0.001; // Slow time progression
+                const noiseX = Math.sin(this.y * 0.01 + timeOffset) * noiseStrength;
+                const noiseY = Math.cos(this.x * 0.008 + timeOffset * 0.7) * noiseStrength * 0.3;
+                
+                this.vx += noiseX; // Removed random component
+                this.vy += noiseY;
+                
+                // Update position
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Fade out over time
+                this.life -= this.decay;
+                this.alpha = Math.max(0, this.life * 0.6); // Max alpha of 0.6 for transparency
+                
+                // Slight size variation
+                this.size *= 0.998;
+            }
+            
+            draw() {
+                ctx.save();
+                
+                // Draw trail
+                for (let i = 0; i < this.trail.length; i++) {
+                    const trailPoint = this.trail[i];
+                    const trailAlpha = (i / this.trail.length) * trailPoint.alpha * 0.8; // Increased trail opacity
+                    const trailSize = this.size * (i / this.trail.length) * 1.2; // Larger trail particles
+                    
+                    ctx.globalAlpha = trailAlpha;
+                    ctx.fillStyle = `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, ${trailAlpha})`;
+                    ctx.beginPath();
+                    ctx.arc(trailPoint.x, trailPoint.y, trailSize, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Draw main particle
+                ctx.globalAlpha = this.alpha;
+                
+                // Create gradient for particle
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size
+                );
+                gradient.addColorStop(0, `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, ${this.alpha})`);
+                gradient.addColorStop(1, `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, 0)`);
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+            
+            isDead() {
+                return this.life <= 0 || this.y < -10;
+            }
+            
+            shouldSplit() {
+                return this.canSplit && !this.hasSplit && this.isDead();
+            }
+            
+            shouldSplitAgain() {
+                return this.canSplitAgain && !this.hasSplit && this.isDead();
+            }
+            
+            shouldChainSplit() {
+                return !this.hasSplit && !this.isFromSplit && !this.canSplit;
+            }
+            
+            split() {
+                this.hasSplit = true;
+                const particle1 = new Particle(this.x, this.y, true); // Mark as split particle
+                const particle2 = new Particle(this.x, this.y, true); // Mark as split particle
+                
+                // Give split particles different velocities
+                particle1.vx = this.vx - 0.2;
+                particle1.vy = this.vy;
+                particle2.vx = this.vx + 0.2;
+                particle2.vy = this.vy;
+                
+                // Make them slightly smaller
+                particle1.size = this.size * 0.7;
+                particle2.size = this.size * 0.7;
+                
+                // Reset their life to full
+                particle1.life = 1;
+                particle1.alpha = 0.6;
+                particle2.life = 1;
+                particle2.alpha = 0.6;
+                
+                // Mark as already split
+                particle1.hasSplit = true;
+                particle2.hasSplit = true;
+                particle1.canSplit = false;
+                particle2.canSplit = false;
+                
+                return [particle1, particle2];
+            }
+            
+            chainSplit() {
+                // Similar to split but triggered by chain reaction
+                this.hasSplit = true;
+                const particle1 = new Particle(this.x, this.y, true);
+                const particle2 = new Particle(this.x, this.y, true);
+                
+                particle1.vx = this.vx - 0.15;
+                particle1.vy = this.vy;
+                particle2.vx = this.vx + 0.15;
+                particle2.vy = this.vy;
+                
+                particle1.size = this.size * 0.8;
+                particle2.size = this.size * 0.8;
+                
+                particle1.life = this.life;
+                particle1.alpha = this.alpha;
+                particle2.life = this.life;
+                particle2.alpha = this.alpha;
+                
+                particle1.hasSplit = true;
+                particle2.hasSplit = true;
+                particle1.canSplit = false;
+                particle2.canSplit = false;
+                
+                return [particle1, particle2];
+            }
+        }
+        
+        function spawnParticle() {
+            if (particles.length < maxParticles) {
+                // Spawn from exact bottom center point
+                const spawnX = width / 2;
+                const spawnY = height - 10;
+                const particle = new Particle(spawnX, spawnY);
+                
+                // 1/8 chance to be eligible for splitting
+                if (Math.random() < 0.125) {
+                    particle.canSplit = true;
+                } else {
+                    particle.canSplit = false;
+                }
+                
+                particles.push(particle);
+            }
+        }
+        
+        function animate(currentTime) {
+            // Spawn particles continuously
+            if (currentTime - lastTime > 50) { // Spawn every 50ms for constant stream
+                spawnParticle();
+                lastTime = currentTime;
+            }
+            
+            // Clear canvas with less transparency for better visibility
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.05)';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                particle.update();
+                
+                // Check for natural splitting when particle is about to die
+                if (particle.shouldSplit()) {
+                    const splitParticles = particle.split();
+                    particles.push(...splitParticles);
+                    
+                    // Start new chain reaction for each natural split
+                    chainReactionCount = 0;
+                    
+                    // Find closest particle and trigger chain reaction
+                    const closest = findClosestParticle(particle);
+                    if (closest) {
+                        triggerChainReaction(closest);
+                    }
+                }
+                
+                // Check for second split on red particles
+                if (particle.shouldSplitAgain()) {
+                    const splitParticles = particle.split();
+                    particles.push(...splitParticles);
+                    particle.canSplitAgain = false; // Prevent further splitting
+                }
+                
+                particle.draw();
+                
+                // Remove dead particles (unless they just split)
+                if (particle.isDead() && !particle.shouldSplit() && !particle.shouldSplitAgain()) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Start animation
+        animate(0);
+    </script>
+</body>
+</html>

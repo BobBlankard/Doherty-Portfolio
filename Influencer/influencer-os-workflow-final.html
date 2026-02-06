@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Influencer OS - Workflow Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f7;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: center;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 14px;
+            color: #666;
+        }
+
+        #container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            cursor: grab;
+        }
+
+        #container.dragging {
+            cursor: grabbing;
+        }
+
+        #canvas-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transform-origin: 0 0;
+            transition: none;
+        }
+
+        #workflow {
+            position: relative;
+            width: 1800px;
+            height: 1100px;
+            margin: 40px auto;
+        }
+
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .section {
+            position: absolute;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 2;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 220px;
+            min-height: 120px;
+        }
+
+        .section:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+            z-index: 10;
+        }
+
+        .section.trigger {
+            border-color: #10b981;
+            background: #f0fdf4;
+        }
+
+        .section.primary {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            border-width: 3px;
+        }
+
+        .section.processing {
+            border-color: #8b5cf6;
+            background: #f5f3ff;
+        }
+
+        .section.output {
+            border-color: #f59e0b;
+            background: #fffbeb;
+        }
+
+        .section.feedback {
+            border-color: #ef4444;
+            background: #fef2f2;
+        }
+
+        .section.support {
+            border-color: #6b7280;
+            background: #f9fafb;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-icon {
+            font-size: 16px;
+        }
+
+        .section-content {
+            font-size: 12px;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+
+        .section-content li {
+            margin-left: 20px;
+            margin-bottom: 3px;
+        }
+
+        .merge-point {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #3b82f6;
+            border: 2px solid white;
+            border-radius: 50%;
+            z-index: 3;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+
+        .arrow {
+            stroke: #6b7280;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead);
+            stroke-linejoin: round;
+            stroke-linecap: round;
+        }
+
+        .arrow.trigger {
+            stroke: #10b981;
+            marker-end: url(#arrowhead-trigger);
+        }
+
+        .arrow.primary {
+            stroke: #3b82f6;
+            stroke-width: 2;
+            marker-end: url(#arrowhead-primary);
+        }
+
+        .arrow.processing {
+            stroke: #8b5cf6;
+            marker-end: url(#arrowhead-processing);
+        }
+
+        .arrow.output {
+            stroke: #f59e0b;
+            marker-end: url(#arrowhead-output);
+        }
+
+        .arrow.feedback {
+            stroke: #ef4444;
+            marker-end: url(#arrowhead-feedback);
+        }
+
+        @keyframes flow {
+            0% {
+                stroke-dashoffset: 20;
+            }
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+
+        .arrow.animated {
+            stroke-dasharray: 10, 10;
+            animation: flow 0.5s linear infinite;
+        }
+
+        .arrow.animated-in {
+            stroke-dasharray: 10, 10;
+            animation: flow 0.5s linear infinite reverse;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .controls button {
+            padding: 6px 12px;
+            border: 1px solid #d1d5db;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .controls button:hover {
+            background: #f3f4f6;
+        }
+
+        .zoom-label {
+            font-size: 13px;
+            color: #6b7280;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .legend {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .legend h3 {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #374151;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .legend-line {
+            width: 30px;
+            height: 3px;
+            border-radius: 2px;
+        }
+
+        .row-label {
+            position: absolute;
+            left: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #9ca3af;
+            background: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Influencer OS - Workflow Architecture</h1>
+        <p>AI-Driven TikTok Content Generation & Learning System</p>
+    </div>
+
+    <div id="container">
+        <div id="canvas-container">
+            <div id="workflow">
+                <!-- SVG for arrows -->
+                <svg>
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#6b7280" />
+                        </marker>
+                        <marker id="arrowhead-trigger" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#10b981" />
+                        </marker>
+                        <marker id="arrowhead-primary" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" />
+                        </marker>
+                        <marker id="arrowhead-processing" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#8b5cf6" />
+                        </marker>
+                        <marker id="arrowhead-output" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#f59e0b" />
+                        </marker>
+                        <marker id="arrowhead-feedback" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#ef4444" />
+                        </marker>
+                    </defs>
+                </svg>
+
+                <!-- Row Labels -->
+                <div class="row-label" style="top: 80px;">TRIGGER</div>
+                <div class="row-label" style="top: 230px;">SUPPORT</div>
+                <div class="row-label" style="top: 400px;">PROCESSING</div>
+                <div class="row-label" style="top: 550px;">GENERATION</div>
+                <div class="row-label" style="top: 700px;">OUTPUT</div>
+                <div class="row-label" style="top: 850px;">LEARNING</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button onclick="zoomIn()">Zoom In</button>
+        <button onclick="zoomOut()">Zoom Out</button>
+        <button onclick="resetZoom()">Reset</button>
+        <button onclick="fitToScreen()">Fit to Screen</button>
+        <span class="zoom-label" id="zoomLevel">100%</span>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+        <h3>Flow Types</h3>
+        <div class="legend-item">
+            <div class="legend-line" style="background: #10b981;"></div>
+            <span>Trigger</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-line" style="background: #3b82f6; height: 4px;"></div>
+            <span>Primary Flow</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-line" style="background: #8b5cf6;"></div>
+            <span>Processing</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-line" style="background: #f59e0b;"></div>
+            <span>Output</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-line" style="background: #ef4444;"></div>
+            <span>Feedback Loop</span>
+        </div>
+    </div>
+
+    <script>
+        let currentZoom = 1;
+        const zoomStep = 0.05;
+        const maxZoom = 2;
+        const minZoom = 0.5;
+        let panX = 0;
+        let panY = 0;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let lastPanX = 0;
+        let lastPanY = 0;
+        
+        const container = document.getElementById('container');
+        const canvasContainer = document.getElementById('canvas-container');
+        const zoomLabel = document.getElementById('zoomLevel');
+        const workflow = document.getElementById('workflow');
+
+        // Layout configuration
+        const WORKFLOW_WIDTH = 1800;
+        const WORKFLOW_HEIGHT = 1100;
+        const CONTENT_CENTER_X = WORKFLOW_WIDTH / 2;
+        const CONTENT_CENTER_Y = WORKFLOW_HEIGHT / 2 + 550;
+        const SECTION_WIDTH = 220;
+        const SECTION_PADDING = 40;
+        
+        // Dynamic section heights based on content
+        const SECTION_HEIGHTS = {
+            default: 120,
+            large: 140,  // For sections with 4+ items
+            xlarge: 160  // For sections with 5+ items
+        };
+        
+        // Calculate center positions for each row with adjusted spacing
+        function calculatePositions() {
+            const positions = {};
+            
+            // Row 1: Single trigger centered
+            positions.trigger = {
+                x: (WORKFLOW_WIDTH - SECTION_WIDTH) / 2,
+                y: 60
+            };
+            
+            // Row 2: 5 support systems centered with padding (adjusted Y for larger sections)
+            const supportCount = 5;
+            const supportTotalWidth = (supportCount * SECTION_WIDTH) + ((supportCount - 1) * SECTION_PADDING);
+            const supportStartX = (WORKFLOW_WIDTH - supportTotalWidth) / 2;
+            
+            positions.support = [];
+            for (let i = 0; i < supportCount; i++) {
+                positions.support.push({
+                    x: supportStartX + (i * (SECTION_WIDTH + SECTION_PADDING)),
+                    y: 210
+                });
+            }
+            
+            // Row 3: Brain server centered (adjusted Y for spacing)
+            positions.brain = {
+                x: (WORKFLOW_WIDTH - SECTION_WIDTH) / 2,
+                y: 400
+            };
+            
+            // Row 4: 2 generation systems centered (adjusted Y for spacing)
+            const genCount = 2;
+            const genTotalWidth = (genCount * SECTION_WIDTH) + ((genCount - 1) * SECTION_PADDING);
+            const genStartX = (WORKFLOW_WIDTH - genTotalWidth) / 2;
+            
+            positions.generation = [
+                { x: genStartX, y: 620 },
+                { x: genStartX + SECTION_WIDTH + SECTION_PADDING, y: 620 }
+            ];
+            
+            // Row 5: Workflow cycle centered (adjusted Y for spacing)
+            positions.workflow = {
+                x: (WORKFLOW_WIDTH - SECTION_WIDTH) / 2,
+                y: 830
+            };
+            
+            // Merge points
+            positions.mergeBrain = {
+                x: WORKFLOW_WIDTH / 2,
+                y: 370
+            };
+            
+            positions.mergeLearning = {
+                x: positions.generation[1].x + SECTION_WIDTH / 2,
+                y: 760
+            };
+            
+            return positions;
+        }
+
+        // Get section height based on content
+        function getSectionHeight(itemCount) {
+            if (itemCount >= 5) return SECTION_HEIGHTS.xlarge;
+            if (itemCount >= 4) return SECTION_HEIGHTS.large;
+            return SECTION_HEIGHTS.default;
+        }
+
+        // Create sections
+        function createSections() {
+            const positions = calculatePositions();
+            
+            // Row 1: Trigger
+            const trigger = createSection('trigger', 'n8n Automation Layer', '⚡', [
+                'Daily Post Planning',
+                'Interest Updates (4x/day)',
+                'Metrics Collection'
+            ], positions.trigger.x, positions.trigger.y);
+            
+            // Row 2: Support systems
+            const supportData = [
+                { title: 'Personality Development', icon: '🎭', items: ['Core personality traits', 'Evolution phases', 'Voice settings'] },
+                { title: 'Dashboard', icon: '📊', items: ['Real-time controls', 'Weight sliders', 'Performance charts'] },
+                { title: 'Data Storage (SQLite)', icon: '💾', items: ['Brain configuration', 'Posts & metrics', 'Token usage'] },
+                { title: 'Safety & Cost Control', icon: '🛡️', items: ['Rate limiting', 'Request tracking', 'Cost monitoring'] },
+                { title: 'Multi-Brain Architecture', icon: '🧠', items: ['Isolated brains', 'brain.db per instance', 'Save/export capability'] }
+            ];
+            
+            supportData.forEach((data, i) => {
+                createSection('support', data.title, data.icon, data.items, positions.support[i].x, positions.support[i].y);
+            });
+            
+            // Row 3: Brain Server
+            createSection('primary', 'Brain Server', '🧠', [
+                'Node.js/Express',
+                'OpenAI API (GPT-4o)',
+                'DALL-E 3 & xAI/Grok',
+                'ffmpeg assembly',
+                'API endpoints'
+            ], positions.brain.x, positions.brain.y);
+            
+            // Row 4: Generation
+            createSection('processing', 'Content Generation Pipeline', '🎬', [
+                'Image Generation',
+                'TTS Voiceover',
+                'Video Assembly',
+                'Output final.mp4'
+            ], positions.generation[0].x, positions.generation[0].y);
+            
+            createSection('feedback', 'Learning & Adaptation Engine', '🔄', [
+                'Metrics Analysis',
+                'Weight Adjustment',
+                'Web Scraping',
+                'Comment Analysis'
+            ], positions.generation[1].x, positions.generation[1].y);
+            
+            // Row 5: Workflow Cycle
+            createSection('output', 'Complete Workflow Cycle', '🔄', [
+                'Post to TikTok',
+                'Collect metrics',
+                'Track engagement',
+                'Feed to learning'
+            ], positions.workflow.x, positions.workflow.y);
+        }
+
+        function createSection(className, title, icon, items, x, y) {
+            const section = document.createElement('div');
+            const sectionHeight = getSectionHeight(items.length);
+            
+            section.className = `section ${className}`;
+            section.style.left = `${x}px`;
+            section.style.top = `${y}px`;
+            section.style.height = `${sectionHeight}px`;
+            section.setAttribute('data-id', title.toLowerCase().replace(/[^a-z0-9]/g, '-'));
+            section.setAttribute('data-height', sectionHeight);
+            
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'section-title';
+            titleDiv.innerHTML = `<span class="section-icon">${icon}</span>${title}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'section-content';
+            const ul = document.createElement('ul');
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                ul.appendChild(li);
+            });
+            contentDiv.appendChild(ul);
+            
+            section.appendChild(titleDiv);
+            section.appendChild(contentDiv);
+            workflow.appendChild(section);
+            
+            // Add hover listeners
+            section.addEventListener('mouseenter', function() {
+                highlightConnections(section.getAttribute('data-id'));
+            });
+            
+            section.addEventListener('mouseleave', function() {
+                clearHighlights();
+            });
+            
+            return section;
+        }
+
+        // Draw arrows with 90-degree turns
+        function drawArrows() {
+            const svg = document.querySelector('svg');
+            const paths = svg.querySelectorAll('path');
+            paths.forEach(p => p.remove());
+            
+            const positions = calculatePositions();
+            
+            // Get actual section heights for arrow positioning
+            const sections = document.querySelectorAll('.section');
+            const sectionHeights = {};
+            sections.forEach(s => {
+                const id = s.getAttribute('data-id');
+                sectionHeights[id] = parseInt(s.getAttribute('data-height') || SECTION_HEIGHTS.default);
+            });
+            
+            const connections = [
+                // n8n to Brain Server
+                {
+                    id: 'trigger-to-brain',
+                    from: { x: positions.trigger.x + SECTION_WIDTH / 2, y: positions.trigger.y + SECTION_HEIGHTS.default },
+                    to: { x: positions.brain.x + SECTION_WIDTH / 2, y: positions.brain.y },
+                    class: 'trigger',
+                    type: 'vertical',
+                    related: ['n8n-automation-layer', 'brain-server']
+                },
+                
+                // Support systems to merge point
+                ...positions.support.map((pos, i) => ({
+                    id: `support-${i}-to-merge`,
+                    from: { x: pos.x + SECTION_WIDTH / 2, y: pos.y + SECTION_HEIGHTS.default },
+                    to: { x: positions.mergeBrain.x, y: positions.mergeBrain.y },
+                    class: '',
+                    type: 'L',
+                    related: [['personality-development', 'dashboard', 'data-storage--sqlite-', 'safety---cost-control', 'multi-brain-architecture'][i], 'brain-server']
+                })),
+                
+                // Merge point to Brain Server
+                {
+                    id: 'merge-to-brain',
+                    from: { x: positions.mergeBrain.x, y: positions.mergeBrain.y },
+                    to: { x: positions.brain.x + SECTION_WIDTH / 2, y: positions.brain.y },
+                    class: 'primary',
+                    type: 'vertical',
+                    related: ['brain-server']
+                },
+                
+                // Brain Server to Content Pipeline
+                {
+                    id: 'brain-to-pipeline',
+                    from: { x: positions.brain.x + SECTION_WIDTH / 2, y: positions.brain.y + SECTION_HEIGHTS.xlarge },
+                    to: { x: positions.generation[0].x + SECTION_WIDTH / 2, y: positions.generation[0].y },
+                    class: 'primary',
+                    type: 'L',
+                    related: ['brain-server', 'content-generation-pipeline']
+                },
+                
+                // Brain Server to Learning Engine
+                {
+                    id: 'brain-to-learning',
+                    from: { x: positions.brain.x + SECTION_WIDTH / 2, y: positions.brain.y + SECTION_HEIGHTS.xlarge },
+                    to: { x: positions.generation[1].x + SECTION_WIDTH / 2, y: positions.generation[1].y },
+                    class: 'primary',
+                    type: 'L',
+                    related: ['brain-server', 'learning---adaptation-engine']
+                },
+                
+                // Content Pipeline to Workflow Cycle
+                {
+                    id: 'pipeline-to-workflow',
+                    from: { x: positions.generation[0].x + SECTION_WIDTH / 2, y: positions.generation[0].y + SECTION_HEIGHTS.large },
+                    to: { x: positions.workflow.x + SECTION_WIDTH / 2, y: positions.workflow.y },
+                    class: 'processing',
+                    type: 'L',
+                    related: ['content-generation-pipeline', 'complete-workflow-cycle']
+                },
+                
+                // Pipeline and Workflow to Learning merge
+                {
+                    id: 'pipeline-to-learning-merge',
+                    from: { x: positions.generation[0].x + SECTION_WIDTH, y: positions.generation[0].y + SECTION_HEIGHTS.large / 2 },
+                    to: { x: positions.mergeLearning.x, y: positions.mergeLearning.y },
+                    class: 'processing',
+                    type: 'complex-right',
+                    related: ['content-generation-pipeline']
+                },
+                
+                {
+                    id: 'workflow-to-learning-merge',
+                    from: { x: positions.workflow.x + SECTION_WIDTH, y: positions.workflow.y + SECTION_HEIGHTS.large / 2 },
+                    to: { x: positions.mergeLearning.x, y: positions.mergeLearning.y },
+                    class: 'output',
+                    type: 'right-up',
+                    related: ['complete-workflow-cycle']
+                },
+                
+                // Learning feedback to Brain Server - simplified with only 2 turns
+                {
+                    id: 'learning-feedback',
+                    from: { x: positions.generation[1].x + SECTION_WIDTH, y: positions.generation[1].y + SECTION_HEIGHTS.large / 2 },
+                    to: { x: positions.brain.x + SECTION_WIDTH, y: positions.brain.y + SECTION_HEIGHTS.xlarge / 2 },
+                    class: 'feedback',
+                    type: 'simple-feedback',
+                    related: ['learning---adaptation-engine', 'brain-server']
+                },
+                
+                // n8n to Learning Engine (4x daily) - extra turn so arrow can go right, then down, then right, then down into box
+                {
+                    id: 'trigger-to-learning-direct',
+                    from: { x: positions.trigger.x + SECTION_WIDTH, y: positions.trigger.y + SECTION_HEIGHTS.default / 2 },
+                    to: { x: positions.generation[1].x + SECTION_WIDTH / 2, y: positions.generation[1].y },
+                    class: 'trigger',
+                    type: 'trigger-to-learning',
+                    related: ['n8n-automation-layer', 'learning---adaptation-engine']
+                }
+            ];
+            
+            connections.forEach(conn => {
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                let d;
+                const cornerRadius = 15;
+                
+                switch (conn.type) {
+                    case 'vertical':
+                        d = `M ${conn.from.x} ${conn.from.y} L ${conn.to.x} ${conn.to.y}`;
+                        break;
+                        
+                    case 'L':
+                        const midY = conn.from.y + (conn.to.y - conn.from.y) / 2;
+                        d = createRoundedPath([
+                            { x: conn.from.x, y: conn.from.y },
+                            { x: conn.from.x, y: midY },
+                            { x: conn.to.x, y: midY },
+                            { x: conn.to.x, y: conn.to.y }
+                        ], cornerRadius);
+                        break;
+                        
+                    case 'complex-right':
+                        d = createRoundedPath([
+                            { x: conn.from.x, y: conn.from.y },
+                            { x: conn.to.x, y: conn.from.y },
+                            { x: conn.to.x, y: conn.to.y }
+                        ], cornerRadius);
+                        break;
+                        
+                    case 'right-up':
+                        d = createRoundedPath([
+                            { x: conn.from.x, y: conn.from.y },
+                            { x: conn.to.x, y: conn.from.y },
+                            { x: conn.to.x, y: conn.to.y }
+                        ], cornerRadius);
+                        break;
+                        
+                    case 'simple-feedback':
+                        // Simplified feedback with just 2 turns: right then up
+                        const fx = conn.from.x + 100;
+                        d = createRoundedPath([
+                            { x: conn.from.x, y: conn.from.y },
+                            { x: fx, y: conn.from.y },
+                            { x: fx, y: conn.to.y },
+                            { x: conn.to.x, y: conn.to.y }
+                        ], cornerRadius);
+                        break;
+                        
+                    case 'large-L':
+                        const lx = conn.from.x + 200;
+                        d = createRoundedPath([
+                            { x: conn.from.x, y: conn.from.y },
+                            { x: lx, y: conn.from.y },
+                            { x: lx, y: conn.to.y },
+                            { x: conn.to.x, y: conn.to.y }
+                        ], cornerRadius);
+                        break;
+                        
+                    case 'trigger-to-learning':
+                        // n8n to Learning: right, down, right (to center above box), down into top of Learning
+                        const ttlRight = conn.from.x + 200;
+                        const ttlAbove = conn.to.y - 25;
+                        d = createRoundedPath([
+                            { x: conn.from.x, y: conn.from.y },
+                            { x: ttlRight, y: conn.from.y },
+                            { x: ttlRight, y: ttlAbove },
+                            { x: conn.to.x, y: ttlAbove },
+                            { x: conn.to.x, y: conn.to.y }
+                        ], cornerRadius);
+                        break;
+                        
+                    default:
+                        d = `M ${conn.from.x} ${conn.from.y} L ${conn.to.x} ${conn.to.y}`;
+                }
+                
+                path.setAttribute('d', d);
+                path.setAttribute('class', `arrow ${conn.class}`);
+                path.setAttribute('data-id', conn.id);
+                if (conn.related && Array.isArray(conn.related)) {
+                    path.setAttribute('data-related', conn.related.join(','));
+                }
+                svg.appendChild(path);
+            });
+        }
+
+        // Create path with rounded corners
+        function createRoundedPath(points, radius) {
+            if (points.length < 2) return '';
+            
+            let path = `M ${points[0].x} ${points[0].y}`;
+            
+            for (let i = 1; i < points.length - 1; i++) {
+                const prev = points[i - 1];
+                const curr = points[i];
+                const next = points[i + 1];
+                
+                // Calculate the direction vectors
+                const dx1 = curr.x - prev.x;
+                const dy1 = curr.y - prev.y;
+                const dx2 = next.x - curr.x;
+                const dy2 = next.y - curr.y;
+                
+                // Calculate the actual radius (limited by segment length)
+                const len1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+                const len2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                const actualRadius = Math.min(radius, len1 / 2, len2 / 2);
+                
+                // Calculate the control points
+                const cp1x = curr.x - (dx1 / len1) * actualRadius;
+                const cp1y = curr.y - (dy1 / len1) * actualRadius;
+                const cp2x = curr.x + (dx2 / len2) * actualRadius;
+                const cp2y = curr.y + (dy2 / len2) * actualRadius;
+                
+                // Draw line to first control point, then quadratic curve
+                path += ` L ${cp1x} ${cp1y}`;
+                path += ` Q ${curr.x} ${curr.y}, ${cp2x} ${cp2y}`;
+            }
+            
+            // Draw line to last point
+            path += ` L ${points[points.length - 1].x} ${points[points.length - 1].y}`;
+            
+            return path;
+        }
+
+        // Highlight connections on hover
+        function highlightConnections(sectionId) {
+            const arrows = document.querySelectorAll('.arrow');
+            
+            arrows.forEach(arrow => {
+                const related = arrow.getAttribute('data-related');
+                if (related && related.includes(sectionId)) {
+                    // Check if this is an outgoing or incoming connection
+                    const relatedArray = related.split(',');
+                    if (relatedArray[0] === sectionId) {
+                        // Outgoing - animate forward
+                        arrow.classList.add('animated');
+                    } else if (relatedArray[relatedArray.length - 1] === sectionId) {
+                        // Incoming - animate backward
+                        arrow.classList.add('animated-in');
+                    } else {
+                        // Part of the path
+                        arrow.classList.add('animated');
+                    }
+                    arrow.style.opacity = '1';
+                    arrow.style.filter = 'drop-shadow(0 0 4px currentColor)';
+                } else {
+                    arrow.style.opacity = '0.3';
+                }
+            });
+        }
+
+        function clearHighlights() {
+            const arrows = document.querySelectorAll('.arrow');
+            arrows.forEach(arrow => {
+                arrow.classList.remove('animated', 'animated-in');
+                arrow.style.opacity = '1';
+                arrow.style.filter = 'none';
+            });
+        }
+
+        // Updated zoom and pan functions
+        function updateTransform() {
+            canvasContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${currentZoom})`;
+            zoomLabel.textContent = `${Math.round(currentZoom * 100)}%`;
+        }
+
+        function zoomIn() {
+            if (currentZoom < maxZoom) {
+                currentZoom = Math.min(currentZoom + zoomStep, maxZoom);
+                updateTransform();
+            }
+        }
+
+        function zoomOut() {
+            if (currentZoom > minZoom) {
+                currentZoom = Math.max(currentZoom - zoomStep, minZoom);
+                updateTransform();
+            }
+        }
+
+        function resetZoom() {
+            currentZoom = 1;
+            panX = 0;
+            panY = 0;
+            updateTransform();
+        }
+
+        function fitToScreen() {
+            const rawW = container.clientWidth;
+            const rawH = container.clientHeight;
+            const containerWidth = Math.max(100, rawW - 100);
+            const containerHeight = Math.max(100, rawH - 100);
+            
+            if (rawW < 50 || rawH < 50) {
+                currentZoom = 0.65;
+                panX = rawW / 2 - CONTENT_CENTER_X * currentZoom;
+                panY = rawH / 2 - CONTENT_CENTER_Y * currentZoom;
+                updateTransform();
+                return;
+            }
+            
+            const scaleX = containerWidth / WORKFLOW_WIDTH;
+            const scaleY = containerHeight / WORKFLOW_HEIGHT;
+            currentZoom = Math.min(scaleX, scaleY, 1);
+            currentZoom = Math.max(minZoom, currentZoom);
+            currentZoom = Math.min(currentZoom * 1.1, maxZoom);
+            
+            panX = rawW / 2 - CONTENT_CENTER_X * currentZoom;
+            panY = rawH / 2 - CONTENT_CENTER_Y * currentZoom;
+            updateTransform();
+        }
+
+        // Mouse wheel zoom at cursor position
+        container.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            
+            const rect = container.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            // Calculate the point under the mouse before zoom
+            const beforeZoomX = (mouseX - panX) / currentZoom;
+            const beforeZoomY = (mouseY - panY) / currentZoom;
+            
+            // Apply zoom
+            const delta = e.deltaY > 0 ? -0.05 : 0.05;
+            const newZoom = Math.max(minZoom, Math.min(maxZoom, currentZoom + delta));
+            
+            // Calculate the point under the mouse after zoom
+            const afterZoomX = beforeZoomX * newZoom;
+            const afterZoomY = beforeZoomY * newZoom;
+            
+            // Adjust pan to keep the point under the mouse stationary
+            panX = mouseX - afterZoomX;
+            panY = mouseY - afterZoomY;
+            currentZoom = newZoom;
+            
+            updateTransform();
+        });
+
+        // Pan with mouse drag
+        container.addEventListener('mousedown', function(e) {
+            if (e.target === container || e.target.closest('#workflow')) {
+                isDragging = true;
+                container.classList.add('dragging');
+                startX = e.clientX - panX;
+                startY = e.clientY - panY;
+                lastPanX = panX;
+                lastPanY = panY;
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (isDragging) {
+                panX = e.clientX - startX;
+                panY = e.clientY - startY;
+                updateTransform();
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('mouseup', function() {
+            if (isDragging) {
+                isDragging = false;
+                container.classList.remove('dragging');
+                lastPanX = panX;
+                lastPanY = panY;
+            }
+        });
+
+        // Prevent drag on sections
+        document.querySelectorAll('.section').forEach(section => {
+            section.addEventListener('mousedown', function(e) {
+                e.stopPropagation();
+            });
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === '=' || e.key === '+') {
+                e.preventDefault();
+                zoomIn();
+            } else if (e.key === '-' || e.key === '_') {
+                e.preventDefault();
+                zoomOut();
+            } else if (e.key === '0') {
+                e.preventDefault();
+                resetZoom();
+            } else if (e.key === 'f' || e.key === 'F') {
+                e.preventDefault();
+                fitToScreen();
+            }
+        });
+
+        // Initialize
+        createSections();
+        drawArrows();
+        fitToScreen();
+        
+        window.addEventListener('load', function() {
+            fitToScreen();
+        });
+        
+        var resizeObserver = new ResizeObserver(function() {
+            fitToScreen();
+        });
+        resizeObserver.observe(container);
+    </script>
+</body>
+</html>
