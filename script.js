@@ -156,8 +156,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Click handler with animation
         item.addEventListener('click', function(e) {
-            e.preventDefault();
             const menuType = this.dataset.menu;
+            // Art Page: let the link work normally (like Applied Works on art page)
+            if (menuType === 'art-page') {
+                return; /* no preventDefault – browser follows href */
+            }
+            e.preventDefault();
             
             // Add selecting animation
             this.classList.add('selecting');
@@ -167,12 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 transitionOverlay.classList.add('active');
                 
                 setTimeout(() => {
-                    // Art Page: navigate to separate page
-                    if (menuType === 'art-page') {
-                        window.location.href = 'art/index.html';
-                        return;
-                    }
-                    
                     // Hide home view
                     homeView.classList.add('hidden');
                     updateHomeBodyClass();

@@ -115,6 +115,11 @@ body {
 a.menu-item-link {
     text-decoration: none;
     color: inherit;
+    outline: none;
+}
+a.menu-item-link:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 4px;
 }
 
 /* Strong black shadow behind text that slides in from left to right */
