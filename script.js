@@ -157,9 +157,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Click handler with animation
         item.addEventListener('click', function(e) {
             const menuType = this.dataset.menu;
-            // Art Page: let the link work normally (like Applied Works on art page)
+            // Art Page: navigate explicitly so nothing can block the link (race, CSP, or host quirk)
             if (menuType === 'art-page') {
-                return; /* no preventDefault – browser follows href */
+                e.preventDefault();
+                window.location.href = this.getAttribute('href') || 'art/';
+                return;
             }
             e.preventDefault();
             
