@@ -65,6 +65,15 @@ document.addEventListener('DOMContentLoaded', () => {
         goTo(0);
         carousel.querySelectorAll('.pinhaus-carousel-prev').forEach(btn => btn.addEventListener('click', () => goTo(index - 1)));
         carousel.querySelectorAll('.pinhaus-carousel-next').forEach(btn => btn.addEventListener('click', () => goTo(index + 1)));
+        const centerPeek = carousel.querySelector('.pinhaus-carousel-center');
+        if (centerPeek) {
+            centerPeek.addEventListener('click', (e) => {
+                const rect = centerPeek.getBoundingClientRect();
+                const mid = rect.left + rect.width / 2;
+                if (e.clientX >= mid) goTo(index + 1);
+                else goTo(index - 1);
+            });
+        }
     });
 
     // Set data-text attribute on menu text elements for shadow effect
@@ -116,6 +125,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const transitionOverlay = document.querySelector('.transition-overlay');
     const homeView = document.getElementById('home-view');
     const contentPages = document.querySelectorAll('.content-page');
+
+    function updateHomeBodyClass() {
+        if (homeView.classList.contains('hidden')) {
+            document.body.classList.remove('home-visible');
+        } else {
+            document.body.classList.add('home-visible');
+        }
+    }
+    updateHomeBodyClass();
     const backButtons = document.querySelectorAll('.back-button');
     
     menuItems.forEach(item => {
@@ -149,8 +167,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 transitionOverlay.classList.add('active');
                 
                 setTimeout(() => {
+                    // Art Page: navigate to separate page
+                    if (menuType === 'art-page') {
+                        window.location.href = 'art/index.html';
+                        return;
+                    }
+                    
                     // Hide home view
                     homeView.classList.add('hidden');
+                    updateHomeBodyClass();
                     
                     // Show selected content page
                     const targetPage = document.getElementById(`${menuType}-page`);
@@ -184,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     setTimeout(() => {
                         currentPage.classList.remove('active');
                         homeView.classList.remove('hidden');
+                        updateHomeBodyClass();
                         setTimeout(() => {
                             transitionOverlay.classList.remove('active');
                         }, 300);
@@ -198,6 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         currentPage.classList.remove('active');
                     }
                     homeView.classList.add('hidden');
+                    updateHomeBodyClass();
                     targetPage.classList.add('active');
 
                     /* Play click animation on the now-visible page’s nav item */
@@ -234,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                     // Show home view
                     homeView.classList.remove('hidden');
-                    
+                    updateHomeBodyClass();
                     // Remove transition overlay
                     setTimeout(() => {
                         transitionOverlay.classList.remove('active');
@@ -401,14 +428,26 @@ document.addEventListener('DOMContentLoaded', () => {
             // Hide all content sections
             const contentDisplay = contentPage.querySelector('.content-display');
             if (contentDisplay) {
+                // Unload creative coding iframes in sections we're leaving (stops animations, saves performance)
+                contentDisplay.querySelectorAll('.subcategory-content.active .embed-cc-iframe').forEach(iframe => {
+                    if (iframe.src && !iframe.src.startsWith('about:')) {
+                        iframe.src = 'about:blank';
+                    }
+                });
                 contentDisplay.querySelectorAll('.subcategory-content').forEach(content => {
                     content.classList.remove('active');
                 });
-                
                 // Show the corresponding content
                 const targetContent = contentDisplay.querySelector(`[data-content="${subcategory}"]`);
                 if (targetContent) {
                     targetContent.classList.add('active');
+                    // Lazy-load creative coding iframes only when their section is opened
+                    targetContent.querySelectorAll('.embed-cc-iframe[data-src]').forEach(iframe => {
+                        const dataSrc = iframe.getAttribute('data-src');
+                        if (dataSrc) {
+                            iframe.src = dataSrc;
+                        }
+                    });
                 }
             }
             // Show corresponding right-panel Skills & Tools for this subcategory

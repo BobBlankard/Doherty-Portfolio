@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Art – Owen Doherty</title>
+    <link rel="icon" href="../webicon.png" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="art.css">
+</head>
+<body>
+    <!-- Default background -->
+    <video class="art-bg-video art-bg-default" autoplay loop muted playsinline aria-hidden="true">
+        <source src="webbgvid.mp4" type="video/mp4">
+    </video>
+
+    <!-- Category backgrounds – shown on nav hover; src set after default video loads for instant hover -->
+    <div class="art-bg-layer art-bg-3d" id="art-bg-3d" aria-hidden="true">
+        <img data-src="white koi 2.jpg" alt="" class="art-bg-image" data-category="3d" decoding="async">
+    </div>
+    <div class="art-bg-layer art-bg-photoshop" id="art-bg-photoshop" aria-hidden="true">
+        <img data-src="photoshop bg.jpg" alt="" class="art-bg-image" data-category="photoshop" decoding="async">
+    </div>
+    <div class="art-bg-layer art-bg-oil" id="art-bg-oil" aria-hidden="true">
+        <img data-src="oil bg.png" alt="" class="art-bg-image" data-category="oil" decoding="async">
+    </div>
+    <div class="art-bg-layer art-bg-acrylic" id="art-bg-acrylic" aria-hidden="true">
+        <img data-src="acrylic bg.png" alt="" class="art-bg-image" data-category="acrylic" decoding="async">
+    </div>
+    <div class="art-bg-layer art-bg-touch-designer" id="art-bg-touch-designer" aria-hidden="true">
+        <img data-src="touchdesigner bg.jpg" alt="" class="art-bg-image" data-category="touch-designer" decoding="async">
+    </div>
+    <div class="art-bg-layer art-bg-applied-works" id="art-bg-applied-works" aria-hidden="true">
+        <img data-src="applied works bg.jpg" alt="" class="art-bg-image" data-category="applied-works" decoding="async">
+    </div>
+
+    <div class="art-bg-overlay" aria-hidden="true"></div>
+
+    <div class="art-top-bar">
+        <div class="art-top-bar-bg" aria-hidden="true"></div>
+        <header class="art-header">
+            <h1 class="art-title">
+                <span class="art-title-name">Owen Doherty</span>
+                <span class="art-title-sub">Art portfolio</span>
+            </h1>
+        </header>
+        <nav class="art-nav" role="tablist">
+            <div class="art-nav-bar">
+                <button type="button" class="art-nav-item" data-category="3d" role="tab">3D</button>
+                <button type="button" class="art-nav-item" data-category="photoshop" role="tab">Photoshop</button>
+                <div class="art-nav-dropdown-wrap">
+                    <button type="button" class="art-nav-item art-nav-item-parent" data-category="oil" aria-haspopup="true" aria-expanded="false">PAINT</button>
+                    <div class="art-nav-dropdown" role="menu">
+                        <button type="button" class="art-nav-item art-nav-dropdown-item" data-category="oil" role="menuitem">Oil</button>
+                        <button type="button" class="art-nav-item art-nav-dropdown-item" data-category="acrylic" role="menuitem">Acrylic</button>
+                    </div>
+                </div>
+                <button type="button" class="art-nav-item" data-category="touch-designer" role="tab">Touch Designer</button>
+                <a href="../index.html" class="art-nav-item art-nav-item-link">Applied Works <span class="art-nav-chevron" aria-hidden="true">›</span></a>
+            </div>
+        </nav>
+        <button type="button" class="art-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="art-drawer">
+            <span class="art-menu-btn-icon" aria-hidden="true"></span>
+        </button>
+    </div>
+
+    <div class="art-drawer" id="art-drawer" aria-hidden="true">
+        <div class="art-drawer-backdrop" aria-hidden="true"></div>
+        <div class="art-drawer-panel">
+            <div class="art-drawer-header">
+                <span class="art-drawer-name">Owen Doherty</span>
+                <span class="art-drawer-portfolio">Art portfolio</span>
+            </div>
+            <nav class="art-drawer-nav">
+                <a href="../index.html" class="art-drawer-item">Home</a>
+                <button type="button" class="art-drawer-item" data-category="3d">3D</button>
+                <button type="button" class="art-drawer-item" data-category="photoshop">Photoshop</button>
+                <div class="art-drawer-dropdown-wrap" id="art-drawer-paint-wrap">
+                    <button type="button" class="art-drawer-item art-drawer-parent" aria-expanded="false" aria-haspopup="true" aria-controls="art-drawer-paint-dropdown" id="art-drawer-paint-btn">
+                        <span>PAINT</span>
+                        <span class="art-drawer-chevron" aria-hidden="true"></span>
+                    </button>
+                    <div class="art-drawer-dropdown" id="art-drawer-paint-dropdown" role="menu" hidden>
+                        <button type="button" class="art-drawer-item art-drawer-subitem" data-category="oil" role="menuitem">Oil</button>
+                        <button type="button" class="art-drawer-item art-drawer-subitem" data-category="acrylic" role="menuitem">Acrylic</button>
+                    </div>
+                </div>
+                <button type="button" class="art-drawer-item" data-category="touch-designer">Touch Designer</button>
+                <a href="../index.html" class="art-drawer-item art-drawer-item-link">Applied Works <span class="art-drawer-link-chevron" aria-hidden="true">›</span></a>
+            </nav>
+            <a href="../index.html" class="art-drawer-back">← Back to portfolio</a>
+        </div>
+    </div>
+
+    <script src="art.js"></script>
+</body>
+</html>
