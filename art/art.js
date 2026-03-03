@@ -1,19 +1,94 @@
 (function () {
-    /* Load hover background images after default video is ready so hover is instant */
+    /* Flow: (1) BG video first, (2) hover images when video ready, (3) idle: hero hover preload, (4) idle: category pages in order Photoshop → 3D → Touch Designer → Oil → Acrylic. Click = prefetch that category and go. */
+    var heroBgUrls = [
+        'white koi 2.jpg',
+        'photoshop bg.jpg',
+        'oil bg.png',
+        'acrylic bg.png',
+        'touchdesigner bg.jpg',
+        'applied works bg.jpg'
+    ];
+    var categoryPreloadOrder = ['photoshop', '3d', 'touch-designer', 'oil', 'acrylic'];
+
+    var videoReady = false;
+    var heroPreloadIndex = 0;
+    var categoryPreloadIndex = 0;
+    var categoryPrefetched = {};
+
+    function preloadOneUrl(url, isVideo) {
+        return new Promise(function (resolve) {
+            if (isVideo) {
+                var v = document.createElement('video');
+                v.preload = 'metadata';
+                v.onloadeddata = resolve;
+                v.onerror = resolve;
+                v.src = url;
+                return;
+            }
+            var img = new Image();
+            img.onload = resolve;
+            img.onerror = resolve;
+            img.src = url;
+        });
+    }
+
+    function runIdlePreload(deadline) {
+        var now = deadline && typeof deadline.timeRemaining === 'function' ? deadline.timeRemaining() : 5;
+        if (now <= 0) {
+            if (window.requestIdleCallback) requestIdleCallback(runIdlePreload, { timeout: 1500 });
+            return;
+        }
+        /* 1) Hover hero images (after video is ready we start idle; load these first) */
+        if (heroPreloadIndex < heroBgUrls.length) {
+            var url = heroBgUrls[heroPreloadIndex];
+            heroPreloadIndex += 1;
+            preloadOneUrl(url, false).then(function () {
+                if (window.requestIdleCallback) requestIdleCallback(runIdlePreload, { timeout: 1500 });
+            });
+            return;
+        }
+        /* 2) Category pages in order: Photoshop → 3D → Touch Designer → Oil → Acrylic */
+        if (categoryPreloadIndex < categoryPreloadOrder.length) {
+            var cat = categoryPreloadOrder[categoryPreloadIndex];
+            if (!categoryPrefetched[cat]) {
+                categoryPrefetched[cat] = true;
+                var link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = 'category.html?c=' + encodeURIComponent(cat);
+                document.head.appendChild(link);
+            }
+            categoryPreloadIndex += 1;
+            if (window.requestIdleCallback) requestIdleCallback(runIdlePreload, { timeout: 500 });
+            return;
+        }
+        if (window.requestIdleCallback) requestIdleCallback(runIdlePreload, { timeout: 2000 });
+    }
+
+    function startIdlePreload() {
+        videoReady = true;
+        if (window.requestIdleCallback) {
+            requestIdleCallback(runIdlePreload, { timeout: 2000 });
+        }
+    }
+
+    /* (1) BG video first; (2) when video ready, assign hover images to DOM and start idle queue (hover preload then category order) */
     var defaultVideo = document.querySelector('.art-bg-default');
     var hoverBgImages = document.querySelectorAll('.art-bg-layer .art-bg-image[data-src]');
     if (defaultVideo && hoverBgImages.length) {
-        function loadHoverBgImages() {
+        function onVideoReady() {
             hoverBgImages.forEach(function (img) {
                 var src = img.getAttribute('data-src');
                 if (src) img.src = src;
             });
-            defaultVideo.removeEventListener('loadeddata', loadHoverBgImages);
-            defaultVideo.removeEventListener('canplay', loadHoverBgImages);
+            defaultVideo.removeEventListener('loadeddata', onVideoReady);
+            defaultVideo.removeEventListener('canplay', onVideoReady);
+            startIdlePreload();
         }
-        defaultVideo.addEventListener('loadeddata', loadHoverBgImages);
-        defaultVideo.addEventListener('canplay', loadHoverBgImages);
-        if (defaultVideo.readyState >= 2) loadHoverBgImages();
+        defaultVideo.addEventListener('loadeddata', onVideoReady);
+        defaultVideo.addEventListener('canplay', onVideoReady);
+        if (defaultVideo.readyState >= 2) onVideoReady();
+    } else {
+        startIdlePreload();
     }
 
     var nav = document.querySelector('.art-nav');
@@ -114,6 +189,14 @@
 
         item.addEventListener('click', function (e) {
             e.preventDefault();
+            /* Prefetch this category’s page so navigation is fast (priority over idle queue) */
+            if (!categoryPrefetched[category]) {
+                categoryPrefetched[category] = true;
+                var link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = 'category.html?c=' + encodeURIComponent(category);
+                document.head.appendChild(link);
+            }
             window.location.href = 'category.html?c=' + encodeURIComponent(category);
         });
     });
@@ -162,6 +245,13 @@
 
         item.addEventListener('click', function (e) {
             e.preventDefault();
+            if (!categoryPrefetched[category]) {
+                categoryPrefetched[category] = true;
+                var link = document.createElement('link');
+                link.rel = 'prefetch';
+                link.href = 'category.html?c=' + encodeURIComponent(category);
+                document.head.appendChild(link);
+            }
             window.location.href = 'category.html?c=' + encodeURIComponent(category);
         });
     });
