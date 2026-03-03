@@ -181,6 +181,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     const targetPage = document.getElementById(`${menuType}-page`);
                     if (targetPage) {
                         targetPage.classList.add('active');
+                        window.scrollTo(0, 0);
+                        var wrapper = targetPage.querySelector('.page-scroll-wrapper');
+                        if (wrapper) wrapper.scrollTop = 0;
                     }
                     
                     // Remove transition overlay
@@ -226,6 +229,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     homeView.classList.add('hidden');
                     updateHomeBodyClass();
                     targetPage.classList.add('active');
+
+                    /* Mobile: scroll to top when switching pages (fixes scroll position sticking) */
+                    window.scrollTo(0, 0);
+                    var scrollWrapper = targetPage.querySelector('.page-scroll-wrapper');
+                    if (scrollWrapper) scrollWrapper.scrollTop = 0;
 
                     /* Play click animation on the now-visible page’s nav item */
                     const activeNavItem = targetPage.querySelector(`.nav-item[data-nav="${navTarget}"]`);

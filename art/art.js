@@ -227,6 +227,16 @@
                 clearCategory();
             }
         });
+        /* Mobile: drawer Applied Works — close drawer then navigate so it doesn't stay open / close doesn't feel like back */
+        link.addEventListener('click', function (e) {
+            if (!link.classList.contains('art-drawer-item-link')) return;
+            var href = link.getAttribute('href');
+            if (href) {
+                e.preventDefault();
+                closeDrawer();
+                window.location.href = href;
+            }
+        });
     });
 
     /* PAINT toggle: open/close dropdown (do not change category or close drawer) */
