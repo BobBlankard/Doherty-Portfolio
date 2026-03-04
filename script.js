@@ -181,9 +181,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     const targetPage = document.getElementById(`${menuType}-page`);
                     if (targetPage) {
                         targetPage.classList.add('active');
-                        window.scrollTo(0, 0);
-                        var wrapper = targetPage.querySelector('.page-scroll-wrapper');
-                        if (wrapper) wrapper.scrollTop = 0;
+                        function scrollActiveToTop() {
+                            window.scrollTo(0, 0);
+                            targetPage.scrollTop = 0;
+                            var w = targetPage.querySelector('.page-scroll-wrapper');
+                            if (w) w.scrollTop = 0;
+                        }
+                        scrollActiveToTop();
+                        requestAnimationFrame(scrollActiveToTop);
+                        setTimeout(scrollActiveToTop, 0);
+                        setTimeout(scrollActiveToTop, 100);
+                        setTimeout(scrollActiveToTop, 350);
                     }
                     
                     // Remove transition overlay
@@ -230,10 +238,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateHomeBodyClass();
                     targetPage.classList.add('active');
 
-                    /* Mobile: scroll to top when switching pages (fixes scroll position sticking) */
-                    window.scrollTo(0, 0);
-                    var scrollWrapper = targetPage.querySelector('.page-scroll-wrapper');
-                    if (scrollWrapper) scrollWrapper.scrollTop = 0;
+                    /* Mobile: scroll to top — content-page is the scroll container; re-run with delays to beat browser scroll restore */
+                    function scrollPageToTop(page) {
+                        if (!page) return;
+                        window.scrollTo(0, 0);
+                        page.scrollTop = 0;
+                        var w = page.querySelector('.page-scroll-wrapper');
+                        if (w) w.scrollTop = 0;
+                    }
+                    scrollPageToTop(targetPage);
+                    requestAnimationFrame(function () { scrollPageToTop(targetPage); });
+                    setTimeout(function () { scrollPageToTop(targetPage); }, 0);
+                    setTimeout(function () { scrollPageToTop(targetPage); }, 100);
+                    setTimeout(function () { scrollPageToTop(targetPage); }, 350);
 
                     /* Play click animation on the now-visible page’s nav item */
                     const activeNavItem = targetPage.querySelector(`.nav-item[data-nav="${navTarget}"]`);

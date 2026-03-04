@@ -212,6 +212,16 @@
     function hideAppliedWorksLayer() {
         if (appliedWorksLayer) appliedWorksLayer.classList.remove('active');
     }
+    var appliedWorksNavigating = false;
+    function goAppliedWorksFromDrawer(linkEl) {
+        if (!linkEl.classList.contains('art-drawer-item-link')) return;
+        var href = linkEl.getAttribute('href');
+        if (!href || appliedWorksNavigating) return;
+        appliedWorksNavigating = true;
+        closeDrawer();
+        window.location.href = href;
+        setTimeout(function () { appliedWorksNavigating = false; }, 600);
+    }
     document.querySelectorAll('.art-nav-item-link, .art-drawer-item-link').forEach(function (link) {
         link.addEventListener('mouseenter', showAppliedWorksLayer);
         link.addEventListener('mouseleave', function () {
@@ -227,14 +237,23 @@
                 clearCategory();
             }
         });
-        /* Mobile: drawer Applied Works — close drawer then navigate so it doesn't stay open / close doesn't feel like back */
+        /* Drawer Applied Works: close then navigate. touchend fires on real mobile; stopPropagation so backdrop doesn't get the tap. */
+        link.addEventListener('touchend', function (e) {
+            if (!link.classList.contains('art-drawer-item-link')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            goAppliedWorksFromDrawer(link);
+        }, { passive: false });
         link.addEventListener('click', function (e) {
             if (!link.classList.contains('art-drawer-item-link')) return;
+            if (appliedWorksNavigating) {
+                e.preventDefault();
+                return;
+            }
             var href = link.getAttribute('href');
             if (href) {
                 e.preventDefault();
-                closeDrawer();
-                window.location.href = href;
+                goAppliedWorksFromDrawer(link);
             }
         });
     });
