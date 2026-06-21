@@ -91,6 +91,19 @@ body {
     }
 }
 
+@keyframes fadeInUpMobile {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(0.95);
+        filter: blur(8px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+        filter: blur(0);
+    }
+}
+
 .menu-item {
     display: inline-flex;
     align-items: center;
@@ -1994,7 +2007,19 @@ body.nav-page-switch .content-page {
         overflow: hidden;
         position: fixed;
         width: 100%;
-        height: 100%;
+        height: 100dvh;
+        min-height: 100dvh;
+        padding: 0;
+    }
+
+    .background-pattern {
+        top: calc(-1 * env(safe-area-inset-top, 0px));
+        left: calc(-1 * env(safe-area-inset-left, 0px));
+        right: calc(-1 * env(safe-area-inset-right, 0px));
+        bottom: calc(-1 * env(safe-area-inset-bottom, 0px));
+        width: auto;
+        height: auto;
+        min-height: calc(100dvh + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px));
     }
 
     .split-line {
@@ -2002,7 +2027,14 @@ body.nav-page-switch .content-page {
     }
 
     .container {
-        padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+        height: 100dvh;
+        min-height: 100dvh;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-left: max(2rem, env(safe-area-inset-left, 0px));
+        padding-right: max(2rem, env(safe-area-inset-right, 0px));
+        justify-content: center;
+        box-sizing: border-box;
     }
 
     .content-page {
@@ -2016,19 +2048,22 @@ body.nav-page-switch .content-page {
     .page-footer {
         padding-bottom: calc(2rem + env(safe-area-inset-bottom));
     }
-    /* Home: stack menu vertically – text-centered, gears/backdrop follow */
+    /* Home: stack menu vertically – flex-centered within safe area */
     .menu-container {
+        position: relative;
+        top: auto;
+        left: auto;
+        right: auto;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 1.25rem;
         align-items: stretch;
         justify-content: center;
         width: 100%;
         max-width: 100%;
         padding-inline: 1rem;
-        left: 50%;
-        right: auto;
-        transform: translate(calc(-50% + 1rem), -50%);
-        margin-top: 4rem;
+        transform: none;
+        margin-top: 0;
+        animation: fadeInUpMobile 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
     }
     
     .menu-item {
@@ -2490,10 +2525,6 @@ body.websites-visible .background-pattern {
     .websites-home {
         top: calc(1rem + env(safe-area-inset-top));
         left: 1.25rem;
-    }
-
-    .menu-container {
-        gap: 1.25rem;
     }
 
     .menu-text {
