@@ -499,6 +499,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (menuType === 'web-development') {
                             setWebsitesVisible(true);
                             syncHistoryForRoute('websites');
+                        } else {
+                            setWebsitesVisible(false);
                         }
                         targetPage.classList.add('active');
                         function scrollActiveToTop() {
