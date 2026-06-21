@@ -301,6 +301,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function initWebsitesPage() {
         if (!websitesPage) return;
 
+        function resolveAssetUrl(path) {
+            if (!path || /^(https?:|data:|blob:)/.test(path)) return path;
+            try {
+                return new URL(path, document.baseURI).href;
+            } catch (_) {
+                return path;
+            }
+        }
+
         const rows = Array.from(websitesPage.querySelectorAll('.website-row'));
         let activeRow = null;
         let inViewObserver = null;
@@ -310,6 +319,11 @@ document.addEventListener('DOMContentLoaded', () => {
         rows.forEach(row => {
             const details = row.querySelector('.website-details');
             if (details) details.setAttribute('aria-hidden', 'true');
+            const video = row.querySelector('.website-video');
+            if (video) {
+                const poster = video.getAttribute('poster');
+                if (poster) video.setAttribute('poster', resolveAssetUrl(poster));
+            }
         });
 
         function loadAndPlay(row) {
@@ -317,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!video) return;
             const dataSrc = video.getAttribute('data-src');
             if (dataSrc && !video.getAttribute('src')) {
-                video.src = dataSrc;
+                video.src = resolveAssetUrl(dataSrc);
             }
             const playPromise = video.play();
             if (playPromise && typeof playPromise.catch === 'function') {
