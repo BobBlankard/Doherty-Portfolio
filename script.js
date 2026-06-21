@@ -188,6 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!websitesPage) return;
         websitesPage.querySelectorAll('.website-video').forEach(video => {
             video.pause();
+            video.classList.remove('is-playing');
             video.removeAttribute('src');
             video.load();
         });
@@ -207,7 +208,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setWebsitesVisible(isVisible) {
         document.body.classList.toggle('websites-visible', isVisible);
-        if (!isVisible) {
+        if (isVisible) {
+            requestAnimationFrame(() => {
+                websitesPageController?.refreshInView?.();
+                setTimeout(() => websitesPageController?.refreshInView?.(), 150);
+            });
+        } else {
             deactivateWebsitesRows();
             unloadWebsitesVideos();
         }
@@ -343,26 +349,62 @@ document.addEventListener('DOMContentLoaded', () => {
             if (video) {
                 const poster = video.getAttribute('poster');
                 if (poster) video.setAttribute('poster', resolveAssetUrl(poster));
+                video.muted = true;
+                video.defaultMuted = true;
+                video.playsInline = true;
+                video.setAttribute('muted', '');
+                video.setAttribute('playsinline', '');
+                video.setAttribute('webkit-playsinline', '');
             }
         });
+
+        function attemptVideoPlay(video) {
+            if (!video) return Promise.resolve(false);
+            const playPromise = video.play();
+            if (!playPromise || typeof playPromise.then !== 'function') {
+                video.classList.add('is-playing');
+                return Promise.resolve(true);
+            }
+            return playPromise
+                .then(() => {
+                    video.classList.add('is-playing');
+                    return true;
+                })
+                .catch(() => {
+                    video.classList.remove('is-playing');
+                    return false;
+                });
+        }
 
         function loadAndPlay(row) {
             const video = row.querySelector('.website-video');
             if (!video) return;
+
             const dataSrc = video.getAttribute('data-src');
             if (dataSrc && !video.getAttribute('src')) {
                 video.src = resolveAssetUrl(dataSrc);
+                video.load();
             }
-            const playPromise = video.play();
-            if (playPromise && typeof playPromise.catch === 'function') {
-                playPromise.catch(() => {});
+
+            if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+                attemptVideoPlay(video);
+                return;
             }
+
+            const onReady = () => {
+                video.removeEventListener('loadeddata', onReady);
+                video.removeEventListener('canplay', onReady);
+                attemptVideoPlay(video);
+            };
+            video.addEventListener('loadeddata', onReady, { once: true });
+            video.addEventListener('canplay', onReady, { once: true });
         }
 
         function pauseVideo(row) {
             const video = row.querySelector('.website-video');
             if (!video) return;
             video.pause();
+            video.classList.remove('is-playing');
             if (video.getAttribute('src')) {
                 video.currentTime = 0;
             }
@@ -410,7 +452,34 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        websitesPageController = { deactivateAll };
+        let scrollScanRaf = null;
+
+        function scanMostVisibleRow() {
+            if (prefersHover || !websitesPage.classList.contains('active')) return;
+            const pageRect = websitesPage.getBoundingClientRect();
+            let bestRow = null;
+            let bestRatio = 0;
+            rows.forEach(row => {
+                const rect = row.getBoundingClientRect();
+                const visibleTop = Math.max(rect.top, pageRect.top);
+                const visibleBottom = Math.min(rect.bottom, pageRect.bottom);
+                const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+                const ratio = rect.height > 0 ? visibleHeight / rect.height : 0;
+                if (ratio > bestRatio) {
+                    bestRatio = ratio;
+                    bestRow = row;
+                }
+            });
+            if (bestRow && bestRatio >= 0.2) {
+                setActiveRow(bestRow);
+            }
+        }
+
+        function scheduleScrollScan() {
+            if (prefersHover) return;
+            cancelAnimationFrame(scrollScanRaf);
+            scrollScanRaf = requestAnimationFrame(scanMostVisibleRow);
+        }
 
         rows.forEach(row => {
             row.addEventListener('mouseenter', () => {
@@ -431,10 +500,40 @@ document.addEventListener('DOMContentLoaded', () => {
                     clearActiveRow(row);
                 }
             });
+
+            const video = row.querySelector('.website-video');
+            if (video) {
+                video.addEventListener('click', (e) => {
+                    if (prefersHover) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setActiveRow(row);
+                    loadAndPlay(row);
+                });
+            }
+        });
+
+        websitesPage.addEventListener('scroll', scheduleScrollScan, { passive: true });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden || !websitesPage.classList.contains('active') || prefersHover) return;
+            if (activeRow) loadAndPlay(activeRow);
+            else scheduleScrollScan();
         });
 
         function setupInViewObserver() {
             if (inViewObserver) inViewObserver.disconnect();
+
+            const touchOptions = {
+                root: websitesPage,
+                threshold: [0, 0.15, 0.3, 0.5],
+                rootMargin: '0px 0px -5% 0px'
+            };
+            const hoverOptions = {
+                root: websitesPage,
+                threshold: [0.35, 0.5, 0.65],
+                rootMargin: '-8% 0px -8% 0px'
+            };
 
             inViewObserver = new IntersectionObserver((entries) => {
                 const visible = entries
@@ -443,11 +542,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (visible.length > 0) {
                     setActiveRow(visible[0].target);
                 }
-            }, {
-                root: websitesPage,
-                threshold: [0.35, 0.5, 0.65],
-                rootMargin: '-8% 0px -8% 0px'
-            });
+            }, prefersHover ? hoverOptions : touchOptions);
 
             rows.forEach(row => inViewObserver.observe(row));
         }
@@ -462,6 +557,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (details) details.setAttribute('aria-hidden', 'false');
                 });
                 setupInViewObserver();
+                requestAnimationFrame(() => {
+                    scheduleScrollScan();
+                    setTimeout(scheduleScrollScan, 100);
+                });
                 return;
             }
 
@@ -478,6 +577,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         }
+
+        websitesPageController = {
+            deactivateAll,
+            refreshInView: scheduleScrollScan
+        };
 
         syncWebsitesInteractionMode();
         window.addEventListener('resize', syncWebsitesInteractionMode);
@@ -728,8 +832,9 @@ document.addEventListener('DOMContentLoaded', () => {
         gear5: { x: 273, y: 173, width: 30, height: 30 },
     };
     
-    // Position gears using only manual positions
+    // Position gears using only manual positions (desktop hover only)
     function positionGearsManually() {
+        if (window.matchMedia('(max-width: 768px)').matches) return;
         const gearFiles = ['gear 1.png', 'gear 2.png', 'gear 3.png', 'gear 4.png', 'gear 5.png'];
         const sizeScale = 1 / 1.5; // 1.5x smaller = divide by 1.5 (approximately 0.667)
         

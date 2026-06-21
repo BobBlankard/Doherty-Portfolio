@@ -94,13 +94,22 @@ body {
 @keyframes fadeInUpMobile {
     from {
         opacity: 0;
-        transform: translateX(calc(-50% + 1rem)) translateY(12px) scale(0.95);
-        filter: blur(8px);
+        transform: translate(-50%, calc(-50% + 12px)) scale(0.98);
+        filter: blur(6px);
     }
     to {
         opacity: 1;
-        transform: translateX(calc(-50% + 1rem));
+        transform: translate(-50%, -50%) scale(1);
         filter: blur(0);
+    }
+}
+
+@keyframes menuItemFadeInMobile {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
     }
 }
 
@@ -2014,7 +2023,9 @@ body.nav-page-switch .content-page {
     }
 
     .container {
-        min-height: 100vh;
+        height: 100svh;
+        height: 100dvh;
+        min-height: 100svh;
         min-height: 100dvh;
         padding-top: env(safe-area-inset-top, 0px);
         padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
@@ -2034,21 +2045,21 @@ body.nav-page-switch .content-page {
     .page-footer {
         padding-bottom: calc(2rem + env(safe-area-inset-bottom));
     }
-    /* Home: stack menu vertically – top-anchored below midpoint, room for safe area */
+    /* Home: stack menu vertically, centered in viewport */
     .menu-container {
-        top: 53%;
+        top: 50%;
         left: 50%;
         right: auto;
         flex-direction: column;
         gap: 1.25rem;
-        align-items: stretch;
-        justify-content: flex-start;
+        align-items: center;
+        justify-content: center;
         width: 100%;
         max-width: 100%;
         padding-inline: 1rem;
-        transform: translateX(calc(-50% + 1rem));
+        transform: translate(-50%, -50%);
         margin-top: 0;
-        animation: fadeInUpMobile 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
+        animation: fadeInUpMobile 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
     }
     
     .menu-item {
@@ -2059,6 +2070,7 @@ body.nav-page-switch .content-page {
         justify-content: center;
         align-items: center;
         text-align: center;
+        animation: menuItemFadeInMobile 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
     
     .menu-item .menu-text {
@@ -2431,6 +2443,11 @@ body.websites-visible .background-pattern {
     height: 100%;
     object-fit: cover;
     pointer-events: none;
+    background: #f4f4f4;
+}
+
+.website-video.is-playing {
+    background: transparent;
 }
 
 .website-details {
@@ -2524,5 +2541,9 @@ body.websites-visible .background-pattern {
 @media (hover: none) {
     .website-details {
         opacity: 1;
+    }
+
+    .website-video {
+        pointer-events: auto;
     }
 }
