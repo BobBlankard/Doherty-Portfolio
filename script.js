@@ -125,6 +125,320 @@ document.addEventListener('DOMContentLoaded', () => {
     const transitionOverlay = document.querySelector('.transition-overlay');
     const homeView = document.getElementById('home-view');
     const contentPages = document.querySelectorAll('.content-page');
+    const websitesPage = document.getElementById('websites-page');
+    const isFileProtocol = window.location.protocol === 'file:';
+    let websitesPageController = null;
+
+    function getPageIdForMenu(menuType) {
+        if (menuType === 'web-development') return 'websites-page';
+        return `${menuType}-page`;
+    }
+
+    function resolveRouteFromLocation() {
+        if (isFileProtocol) {
+            const hash = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+            if (hash === 'websites' || hash.startsWith('websites/')) return 'websites';
+            return 'home';
+        }
+        const search = window.location.search;
+        if (search && search.length > 2) {
+            const ghMatch = search.match(/^\?\/?(.+)$/);
+            if (ghMatch) {
+                const ghSegment = ghMatch[1].replace(/~and~/g, '&').replace(/^\/+|\/+$/g, '');
+                if (ghSegment === 'websites') return 'websites';
+            }
+        }
+        const segments = window.location.pathname.split('/').filter(Boolean);
+        if (segments[segments.length - 1] === 'websites') return 'websites';
+        return 'home';
+    }
+
+    function getHistoryUrlForRoute(route) {
+        if (isFileProtocol) {
+            if (route === 'websites') return '#/websites';
+            return window.location.pathname + window.location.search;
+        }
+        return route === 'websites' ? '/websites/' : '/';
+    }
+
+    function syncHistoryForRoute(route, replace = false) {
+        const url = getHistoryUrlForRoute(route);
+        const method = replace ? 'replaceState' : 'pushState';
+        history[method]({ route }, '', url);
+    }
+
+    function unloadWebsitesVideos() {
+        if (!websitesPage) return;
+        websitesPage.querySelectorAll('.website-video').forEach(video => {
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+        });
+    }
+
+    function deactivateWebsitesRows() {
+        websitesPageController?.deactivateAll();
+    }
+
+    function scrollPageToTop(page) {
+        if (!page) return;
+        window.scrollTo(0, 0);
+        page.scrollTop = 0;
+        const wrapper = page.querySelector('.page-scroll-wrapper');
+        if (wrapper) wrapper.scrollTop = 0;
+    }
+
+    function setWebsitesVisible(isVisible) {
+        document.body.classList.toggle('websites-visible', isVisible);
+        if (!isVisible) {
+            deactivateWebsitesRows();
+            unloadWebsitesVideos();
+        }
+    }
+
+    function showContentPageById(pageId, options = {}) {
+        const { animate = true } = options;
+        const targetPage = document.getElementById(pageId);
+        if (!targetPage) return;
+
+        const reveal = () => {
+            contentPages.forEach(page => page.classList.remove('active'));
+            homeView.classList.add('hidden');
+            targetPage.classList.add('active');
+            setWebsitesVisible(pageId === 'websites-page');
+            updateHomeBodyClass();
+            scrollPageToTop(targetPage);
+            requestAnimationFrame(() => scrollPageToTop(targetPage));
+            setTimeout(() => scrollPageToTop(targetPage), 0);
+            setTimeout(() => scrollPageToTop(targetPage), 100);
+            setTimeout(() => scrollPageToTop(targetPage), 350);
+        };
+
+        if (!animate) {
+            reveal();
+            return;
+        }
+
+        transitionOverlay.classList.add('active');
+        setTimeout(() => {
+            reveal();
+            setTimeout(() => transitionOverlay.classList.remove('active'), 300);
+        }, 200);
+    }
+
+    function showHome(options = {}) {
+        const { animate = true } = options;
+        const reveal = () => {
+            contentPages.forEach(page => page.classList.remove('active'));
+            homeView.classList.remove('hidden');
+            setWebsitesVisible(false);
+            updateHomeBodyClass();
+            window.scrollTo(0, 0);
+        };
+
+        if (!animate) {
+            reveal();
+            return;
+        }
+
+        transitionOverlay.classList.add('active');
+        setTimeout(() => {
+            reveal();
+            setTimeout(() => transitionOverlay.classList.remove('active'), 300);
+        }, 200);
+    }
+
+    function navigateToRoute(route, options = {}) {
+        const { replace = false, animate = true, fromPopstate = false } = options;
+
+        if (route === 'websites') {
+            showContentPageById('websites-page', { animate });
+        } else if (route === 'home') {
+            showHome({ animate });
+        } else {
+            showContentPageById(`${route}-page`, { animate });
+        }
+
+        if (!fromPopstate) {
+            syncHistoryForRoute(route, replace);
+        }
+    }
+
+    function handlePopstate() {
+        const route = resolveRouteFromLocation();
+        if (route === 'websites') {
+            showContentPageById('websites-page', { animate: false });
+        } else if (document.querySelector('.content-page.active') && route === 'home') {
+            showHome({ animate: false });
+        }
+    }
+
+    window.addEventListener('popstate', handlePopstate);
+
+    if (isFileProtocol) {
+        window.addEventListener('hashchange', () => {
+            const route = resolveRouteFromLocation();
+            if (route === 'websites') {
+                showContentPageById('websites-page', { animate: false });
+            } else if (route === 'home') {
+                showHome({ animate: false });
+            }
+        });
+    }
+
+    // GitHub Pages SPA redirect (?/websites/)
+    (function handleGhPagesRedirect() {
+        if (isFileProtocol) return;
+        const search = window.location.search;
+        if (!search || search.length < 3) return;
+        const ghMatch = search.match(/^\?\/?(.+)$/);
+        if (!ghMatch) return;
+        let cleanPath = '/' + ghMatch[1].replace(/~and~/g, '&').replace(/^\/+/, '');
+        if (!cleanPath.endsWith('/')) cleanPath += '/';
+        history.replaceState({ route: resolveRouteFromLocation() }, '', cleanPath);
+    })();
+
+    function initWebsitesPage() {
+        if (!websitesPage) return;
+
+        const rows = Array.from(websitesPage.querySelectorAll('.website-row'));
+        let activeRow = null;
+        let inViewObserver = null;
+        let hoverLeaveTimer = null;
+        let prefersHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+        rows.forEach(row => {
+            const details = row.querySelector('.website-details');
+            if (details) details.setAttribute('aria-hidden', 'true');
+        });
+
+        function loadAndPlay(row) {
+            const video = row.querySelector('.website-video');
+            if (!video) return;
+            const dataSrc = video.getAttribute('data-src');
+            if (dataSrc && !video.getAttribute('src')) {
+                video.src = dataSrc;
+            }
+            const playPromise = video.play();
+            if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch(() => {});
+            }
+        }
+
+        function pauseVideo(row) {
+            const video = row.querySelector('.website-video');
+            if (!video) return;
+            video.pause();
+            if (video.getAttribute('src')) {
+                video.currentTime = 0;
+            }
+        }
+
+        function updateDetailsA11y(row, expanded) {
+            const details = row.querySelector('.website-details');
+            if (details) details.setAttribute('aria-hidden', expanded ? 'false' : 'true');
+        }
+
+        function setActiveRow(row) {
+            if (!row || activeRow === row) return;
+            clearTimeout(hoverLeaveTimer);
+            if (activeRow) {
+                activeRow.classList.remove('is-active');
+                updateDetailsA11y(activeRow, false);
+                pauseVideo(activeRow);
+            }
+            activeRow = row;
+            row.classList.add('is-active');
+            updateDetailsA11y(row, true);
+            loadAndPlay(row);
+        }
+
+        function clearActiveRow(row) {
+            if (!row || activeRow !== row) return;
+            row.classList.remove('is-active');
+            updateDetailsA11y(row, false);
+            pauseVideo(row);
+            activeRow = null;
+        }
+
+        function deactivateAll() {
+            clearTimeout(hoverLeaveTimer);
+            if (activeRow) {
+                activeRow.classList.remove('is-active');
+                updateDetailsA11y(activeRow, false);
+                pauseVideo(activeRow);
+                activeRow = null;
+            }
+        }
+
+        websitesPageController = { deactivateAll };
+
+        rows.forEach(row => {
+            row.addEventListener('mouseenter', () => {
+                if (!prefersHover) return;
+                clearTimeout(hoverLeaveTimer);
+                setActiveRow(row);
+            });
+            row.addEventListener('mouseleave', () => {
+                if (!prefersHover) return;
+                hoverLeaveTimer = setTimeout(() => clearActiveRow(row), 60);
+            });
+
+            row.addEventListener('focusin', () => {
+                if (prefersHover) setActiveRow(row);
+            });
+            row.addEventListener('focusout', (e) => {
+                if (!prefersHover || !row.contains(e.relatedTarget)) {
+                    clearActiveRow(row);
+                }
+            });
+        });
+
+        function setupInViewObserver() {
+            prefersHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+            if (prefersHover) {
+                if (inViewObserver) {
+                    inViewObserver.disconnect();
+                    inViewObserver = null;
+                }
+                return;
+            }
+
+            if (inViewObserver) inViewObserver.disconnect();
+
+            inViewObserver = new IntersectionObserver((entries) => {
+                const visible = entries
+                    .filter(entry => entry.isIntersecting)
+                    .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+                if (visible.length > 0) {
+                    setActiveRow(visible[0].target);
+                }
+            }, {
+                root: websitesPage,
+                threshold: [0.35, 0.5, 0.65],
+                rootMargin: '-8% 0px -8% 0px'
+            });
+
+            rows.forEach(row => inViewObserver.observe(row));
+        }
+
+        setupInViewObserver();
+        window.addEventListener('resize', setupInViewObserver);
+
+        const websitesHomeBtn = websitesPage.querySelector('.websites-home');
+        if (websitesHomeBtn) {
+            websitesHomeBtn.addEventListener('click', () => navigateToRoute('home'));
+        }
+    }
+
+    initWebsitesPage();
+
+    const initialRoute = resolveRouteFromLocation();
+    if (initialRoute === 'websites') {
+        showContentPageById('websites-page', { animate: false });
+        syncHistoryForRoute('websites', true);
+    }
 
     function updateHomeBodyClass() {
         if (homeView.classList.contains('hidden')) {
@@ -176,10 +490,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Hide home view
                     homeView.classList.add('hidden');
                     updateHomeBodyClass();
-                    
+                    contentPages.forEach(page => page.classList.remove('active'));
+
                     // Show selected content page
-                    const targetPage = document.getElementById(`${menuType}-page`);
+                    const pageId = getPageIdForMenu(menuType);
+                    const targetPage = document.getElementById(pageId);
                     if (targetPage) {
+                        if (menuType === 'web-development') {
+                            setWebsitesVisible(true);
+                            syncHistoryForRoute('websites');
+                        }
                         targetPage.classList.add('active');
                         function scrollActiveToTop() {
                             window.scrollTo(0, 0);
@@ -216,15 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (navTarget === 'home') {
                 const currentPage = document.querySelector('.content-page.active');
                 if (currentPage) {
-                    transitionOverlay.classList.add('active');
-                    setTimeout(() => {
-                        currentPage.classList.remove('active');
-                        homeView.classList.remove('hidden');
-                        updateHomeBodyClass();
-                        setTimeout(() => {
-                            transitionOverlay.classList.remove('active');
-                        }, 300);
-                    }, 200);
+                    navigateToRoute('home');
                 }
             } else {
                 const currentPage = document.querySelector('.content-page.active');
@@ -235,6 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         currentPage.classList.remove('active');
                     }
                     homeView.classList.add('hidden');
+                    setWebsitesVisible(false);
                     updateHomeBodyClass();
                     targetPage.classList.add('active');
 
@@ -301,13 +614,15 @@ document.addEventListener('DOMContentLoaded', () => {
     
     document.addEventListener('keydown', (e) => {
         // Don't handle keyboard nav if on content page
-        if (document.querySelector('.content-page.active')) {
+        const activePage = document.querySelector('.content-page.active');
+        if (activePage) {
             if (e.key === 'Escape') {
-                const activePage = document.querySelector('.content-page.active');
-                if (activePage) {
-                    const backBtn = activePage.querySelector('.back-button');
-                    if (backBtn) backBtn.click();
+                if (activePage.id === 'websites-page') {
+                    navigateToRoute('home');
+                    return;
                 }
+                const backBtn = activePage.querySelector('.back-button');
+                if (backBtn) backBtn.click();
             }
             return;
         }
