@@ -332,13 +332,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rows = Array.from(websitesPage.querySelectorAll('.website-row'));
         let activeRow = null;
-        let inViewObserver = null;
         let hoverLeaveTimer = null;
         let prefersHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
         rows.forEach(row => {
             const details = row.querySelector('.website-details');
-            if (details) details.setAttribute('aria-hidden', 'true');
+            if (details) details.setAttribute('aria-hidden', prefersHover ? 'true' : 'false');
             const video = row.querySelector('.website-video');
             if (video) {
                 const poster = video.getAttribute('poster');
@@ -370,7 +369,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function updateDetailsA11y(row, expanded) {
             const details = row.querySelector('.website-details');
-            if (details) details.setAttribute('aria-hidden', expanded ? 'false' : 'true');
+            if (!details) return;
+            if (!prefersHover) {
+                details.setAttribute('aria-hidden', 'false');
+                return;
+            }
+            details.setAttribute('aria-hidden', expanded ? 'false' : 'true');
         }
 
         function setActiveRow(row) {
@@ -428,37 +432,29 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        function setupInViewObserver() {
+        function syncWebsitesInteractionMode() {
+            const wasHover = prefersHover;
             prefersHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
-            if (prefersHover) {
-                if (inViewObserver) {
-                    inViewObserver.disconnect();
-                    inViewObserver = null;
-                }
+            if (!prefersHover) {
+                deactivateAll();
+                rows.forEach(row => {
+                    const details = row.querySelector('.website-details');
+                    if (details) details.setAttribute('aria-hidden', 'false');
+                });
                 return;
             }
 
-            if (inViewObserver) inViewObserver.disconnect();
-
-            inViewObserver = new IntersectionObserver((entries) => {
-                const visible = entries
-                    .filter(entry => entry.isIntersecting)
-                    .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-                if (visible.length > 0) {
-                    setActiveRow(visible[0].target);
-                }
-            }, {
-                root: websitesPage,
-                threshold: [0.35, 0.5, 0.65],
-                rootMargin: '-8% 0px -8% 0px'
-            });
-
-            rows.forEach(row => inViewObserver.observe(row));
+            if (!wasHover) {
+                rows.forEach(row => {
+                    const details = row.querySelector('.website-details');
+                    if (details) details.setAttribute('aria-hidden', 'true');
+                });
+            }
         }
 
-        setupInViewObserver();
-        window.addEventListener('resize', setupInViewObserver);
+        syncWebsitesInteractionMode();
+        window.addEventListener('resize', syncWebsitesInteractionMode);
 
         const websitesHomeBtn = websitesPage.querySelector('.websites-home');
         if (websitesHomeBtn) {

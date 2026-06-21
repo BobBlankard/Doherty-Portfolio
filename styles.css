@@ -2530,4 +2530,14 @@ body.websites-visible .background-pattern {
     .menu-text {
         font-size: clamp(0.75rem, 3.5vw, 1rem);
     }
+
+    .website-details {
+        opacity: 1;
+    }
+}
+
+@media (hover: none) {
+    .website-details {
+        opacity: 1;
+    }
 }
