@@ -332,6 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rows = Array.from(websitesPage.querySelectorAll('.website-row'));
         let activeRow = null;
+        let inViewObserver = null;
         let hoverLeaveTimer = null;
         let prefersHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
@@ -432,20 +433,45 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
+        function setupInViewObserver() {
+            if (inViewObserver) inViewObserver.disconnect();
+
+            inViewObserver = new IntersectionObserver((entries) => {
+                const visible = entries
+                    .filter(entry => entry.isIntersecting)
+                    .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+                if (visible.length > 0) {
+                    setActiveRow(visible[0].target);
+                }
+            }, {
+                root: websitesPage,
+                threshold: [0.35, 0.5, 0.65],
+                rootMargin: '-8% 0px -8% 0px'
+            });
+
+            rows.forEach(row => inViewObserver.observe(row));
+        }
+
         function syncWebsitesInteractionMode() {
             const wasHover = prefersHover;
             prefersHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
 
             if (!prefersHover) {
-                deactivateAll();
                 rows.forEach(row => {
                     const details = row.querySelector('.website-details');
                     if (details) details.setAttribute('aria-hidden', 'false');
                 });
+                setupInViewObserver();
                 return;
             }
 
+            if (inViewObserver) {
+                inViewObserver.disconnect();
+                inViewObserver = null;
+            }
+
             if (!wasHover) {
+                deactivateAll();
                 rows.forEach(row => {
                     const details = row.querySelector('.website-details');
                     if (details) details.setAttribute('aria-hidden', 'true');
