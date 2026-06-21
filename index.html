@@ -13,9 +13,12 @@
     <!-- If your host adds a strict CSP that blocks eval and creative-coding iframes break, you can add a meta CSP here that includes script-src 'unsafe-eval' (only if needed; has security trade-offs). ERR_BLOCKED_BY_CLIENT is usually a browser extension (e.g. ad blocker), not the site. -->
     <title>Owen Doherty - Portfolio</title>
     <link rel="icon" href="webicon.png" type="image/png">
+    <link rel="preload" as="image" href="website-background.webp" type="image/webp" media="(min-width: 769px)" fetchpriority="high">
+    <link rel="preload" as="image" href="website-background-mobile.webp" type="image/webp" media="(max-width: 768px)" fetchpriority="high">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="styles.css">
     <svg style="display: none;">
         <defs>
@@ -29,7 +32,14 @@
     </svg>
 </head>
 <body>
-    <div class="background-pattern"></div>
+    <div class="background-pattern" aria-hidden="true">
+        <picture>
+            <source media="(max-width: 768px)" srcset="website-background-mobile.webp" type="image/webp">
+            <source media="(max-width: 768px)" srcset="website background mobile.jpg">
+            <source srcset="website-background.webp" type="image/webp">
+            <img src="website background.jpg" alt="" fetchpriority="high" decoding="async" width="1920" height="1080">
+        </picture>
+    </div>
     
     <main class="container home-view" id="home-view">
         <!-- Split lines positioned at body level to ensure viewport positioning -->
@@ -867,6 +877,5 @@
     <div class="transition-overlay"></div>
     
     <script src="script.js"></script>
-    <script src="art-generator-full.js"></script>
 </body>
 </html>

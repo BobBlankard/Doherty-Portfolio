@@ -128,6 +128,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const websitesPage = document.getElementById('websites-page');
     const isFileProtocol = window.location.protocol === 'file:';
     let websitesPageController = null;
+    let artGeneratorLoadPromise = null;
+
+    function ensureArtGeneratorLoaded() {
+        if (artGeneratorLoadPromise) return artGeneratorLoadPromise;
+        artGeneratorLoadPromise = new Promise((resolve, reject) => {
+            if (document.querySelector('script[src*="art-generator-full.js"]')) {
+                resolve();
+                return;
+            }
+            const script = document.createElement('script');
+            script.src = 'art-generator-full.js';
+            script.onload = () => resolve();
+            script.onerror = () => reject(new Error('Failed to load art generator'));
+            document.body.appendChild(script);
+        });
+        return artGeneratorLoadPromise;
+    }
 
     function getPageIdForMenu(menuType) {
         if (menuType === 'web-development') return 'websites-page';
@@ -205,6 +222,9 @@ document.addEventListener('DOMContentLoaded', () => {
             contentPages.forEach(page => page.classList.remove('active'));
             homeView.classList.add('hidden');
             targetPage.classList.add('active');
+            if (pageId === 'app-designer-page') {
+                ensureArtGeneratorLoaded().catch(() => {});
+            }
             setWebsitesVisible(pageId === 'websites-page');
             updateHomeBodyClass();
             scrollPageToTop(targetPage);

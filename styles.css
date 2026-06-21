@@ -35,12 +35,19 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-image: url('website background.jpg');
-    background-size: cover;
-    background-position: center center;
-    background-repeat: no-repeat;
+    background-color: #e8e8e8;
     z-index: 0;
     pointer-events: none;
+    overflow: hidden;
+}
+
+.background-pattern picture,
+.background-pattern img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center center;
 }
 
 .container {
@@ -1988,10 +1995,6 @@ body.nav-page-switch .content-page {
         position: fixed;
         width: 100%;
         height: 100%;
-    }
-
-    .background-pattern {
-        background-image: url('website background mobile.jpg');
     }
 
     .split-line {
