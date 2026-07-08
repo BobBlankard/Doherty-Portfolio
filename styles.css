@@ -2045,9 +2045,9 @@ body.nav-page-switch .content-page {
     .page-footer {
         padding-bottom: calc(2rem + env(safe-area-inset-bottom));
     }
-    /* Home: stack menu vertically, centered in viewport */
+    /* Home: stack menu vertically, centered horizontally, slightly below mid-viewport */
     .menu-container {
-        top: 50%;
+        top: calc(50% + 100px);
         left: 50%;
         right: auto;
         flex-direction: column;
